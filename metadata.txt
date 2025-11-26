@@ -1,0 +1,15 @@
+[general]
+name=Prelev_Mapping_AERMC_V2
+qgisMinimumVersion=3.0
+version=1.2.0
+author=Aurel Lashermes
+email=aurel.lashermes@eaurmc.fr
+description=Orchestrateur pour analyses de prélèvements (pentes, ratios VP/VA) ; interface centralisée pour lancer les scripts existants et charger zones/QML.
+about=Plugin qui facilite l’exécution des scripts d’analyse (pentes, ratios) depuis une interface unique : choix du programme, chargement de la zone d'étude, application de QML et ouverture de la boîte d'outil Processing.
+homepage=https://example.org
+tracker=https://example.org/issues
+repository=https://example.org/repo
+tags=analysis,visualization,processing
+icon=icon.png
+experimental=false
+deprecated=false
