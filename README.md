@@ -42,15 +42,15 @@ Le plugin fournit une interface en 2 étapes :
 - `QML/` : qml de styles utilisés par défaut
 - `README.md` (ce document)
 
-## Installation
+# Installation
 
 ### 1) Installation du plugin
-- Option A — depuis GitHub : télécharger le dossier (cliquer sur le bouton \<\> Code -> Download ZIP), installer via QGIS _Extension > Installer depuis un fichier ZIP_.
-- **PAS ENCORE DISPONIBLE** Option B — depuis QGIS Plugin Repo : (si publié) installer depuis _Extension > Installer > Chercher VOCAL dans la barre de recherche > Installer_.
+- Option A — depuis GitHub : télécharger le dossier (cliquer sur le bouton _\<\> _Code -> _Download _ZIP). Une fois télécharger, lancer QGIS, cliquer sur l'onglet _Extension -> *Installer depuis un fichier ZIP*. Lancer le nouveau programme de votre barre des tâches QGIS *Le VOCAL*. Lancer une initiation en selectionnant une programme et une zone d'étude de votre choix, faites *Suivant*. Sur la nouvelle fenêtre qui s'ouvre faites *Ouvrir l'outil processing*. Un message d'erreur devrait apparaitre, c'est l'initialisation. Redemarrer QGIS. Le plugin est désormais prêt.
+- **!! PAS ENCORE DISPONIBLE !! ** Option B — depuis QGIS Plugin Repo : (si publié) installer depuis _Extension > Installer > Chercher VOCAL dans la barre de recherche > Installer_.
 
 ### 2) Données auxiliaires (couches de référence)
 Pour l'option A : les couches lourdes (GeoPackage, bases de fonds)sont embarquées dans le ZIP du plugin.
-**PAS ENCORE DISPONIBLE** Pour l'option B : Un mécanisme de téléchargement à la première ouverture va être ajoutés via script interne pour automatiser la récupération des gpkg depuis GitHub Releases. outés via script interne) pour automatiser la récupération des gpkg depuis GitHub Releases.
+**!! PAS ENCORE DISPONIBLE !!** Pour l'option B : Un mécanisme de téléchargement à la première ouverture va être ajoutés via script interne pour automatiser la récupération des gpkg depuis GitHub Releases. outés via script interne) pour automatiser la récupération des gpkg depuis GitHub Releases.
 
 
 ## Utilisation basique (workflow)
