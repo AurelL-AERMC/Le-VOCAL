@@ -68,12 +68,13 @@ ALGO_INFOS = {
         'alg_id': 'script:zones_compare_prelev_autorise',
         'script_name': 'compute_ratio_VPVA_zonages.py'
     },
-    # Newly added program integration
+    
     "État connaissance - ouvrages Agence": {
         # use the exact id you provided (include 'script:' prefix if that's how it appears in the Toolbox)
         'alg_id': 'script:compute_connaissance_ouvrages_agence',
         'script_name': 'compute_connaissance_ouvrages_agence.py'
     }
+    #D'autres programmes peuvent etre ajouter ici. Attention aux noms des programmes en mettant script: devant.
 }
 
 # ---------------- Helpers ----------------
@@ -261,7 +262,7 @@ def ensure_scripts_in_user_folder(feedback=None):
 class PrelevOrchestratorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent or iface.mainWindow())
-        self.setWindowTitle('Orchestrateur — Prélèvements (lanceur)')
+        self.setWindowTitle('Le VOCAL')
         self.resize(920, 560)
 
         # stacked pages
@@ -709,7 +710,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
             QtWidgets.QMessageBox.information(self, 'Algorithme manquant',
                 f"L'algorithme {alg_id} n'est pas trouvé dans le Toolbox.\n"
                 "Nous avons copié les scripts réseau vers ton dossier Processing/scripts utilisateur (si disponible).\n"
-                "Si l'algorithme n'apparaît pas, redémarre QGIS ou va dans Processing > Toolbox > Refresh (icône).\n\n"
+                "Si l'algorithme n'apparaît pas, redémarre QGIS.\n\n"
                 f"Script source (réseau) : {os.path.join(NETWORK_SCRIPTS_FOLDER, info.get('script_name','-'))}")
             return
 
@@ -749,7 +750,7 @@ class PrelevOrchestratorPlugin:
         self.action = None
 
     def initGui(self):
-        self.action = QtWidgets.QAction('Orchestrateur prélèvements', self.iface.mainWindow())
+        self.action = QtWidgets.QAction('Le VOCAL', self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addPluginToMenu('&Prelev Orchestrator', self.action)
         self.iface.addToolBarIcon(self.action)
