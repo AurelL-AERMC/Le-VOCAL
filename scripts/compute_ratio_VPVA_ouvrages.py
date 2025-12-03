@@ -1,15 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Processing script QGIS : comparer volumes prélevés vs volumes autorisés (année unique)
-Ajout : prise en compte du champ 'type de milieu' depuis la couche prélèvements,
-      ces valeurs sont conservées (concaténées si plusieurs) dans la couche de sortie.
-- Agrège les prélèvements (Assiette) par ID Ouvrage pour l'année choisie
-- Joint avec la table Volumes Autorisés (jointure exacte sur ID Ouvrage Agence)
-- Si plusieurs enregistrements autorisés -> prend MAX(volume autorisé) et concatène DDTM distincts
-- Calcule ratio = assiette / vol_autorise, indique si ratio possible, calcule % dépassement
-- Option pour inclure/exclure les ouvrages prélevés sans enregistrement autorisé
-- Option pour appliquer un QML (chemin par défaut réseau)
+## Objectifs
+Pour une année donnée, comparer le volume prélevé (VP, "assiettes" retenues à l'Agence) à un volume autorisé (VA, arrétés de déclaration ou d'autorisation DDTM). Déterminer les dépassements et fournir des indicateurs de ce ratio.
+## Traitement
+- Filtrage spatial (zone) si la couche zone a des géométries.
+- Agréger les volumes par ID ouvrage pour l'année choisie.
+- Joindre avec la table autorisée : prendre `MAX(VA)` si plusieurs enregistrements, concaténer champs DDTM distincts.
+- Calculer `ratio = VP / VA` (si VA non nul) et `% overrun`.
+
+## Sortie
+Couche par ouvrage pour l'année choisie : `annee`, `ouvrage_id`, `ouvrage_name`, `interlocuteur`, `assiette`, `vol_autorise`, `ddtm_id`, `ratio`, `ratio_possible`, `percent_overrun`, `note`, `type_milieu`.
+
+## Note sur les indicateurs
+- Le ratio représente réellement la division du VP/VA
+- Le %overrun présente le pourcentage que représente le VP/VA. 
 """
+
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
     QgsProcessing,
@@ -25,7 +31,8 @@ from qgis.core import (
     QgsFields,
     QgsProject,
     QgsProcessingUtils,
-    QgsFeatureSink
+    QgsFeatureSink,
+    QgsSpatialIndex
 )
 import re
 import os
@@ -115,11 +122,16 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
     """
 
     # paramètres
+    ZONE = 'ZONE'  # nouvelle couche zone d'étude (polygones)
     PRELEV = 'PRELEV'
     PRELEV_YEAR_FIELD = 'PRELEV_YEAR_FIELD'
     PRELEV_OUV_FIELD = 'PRELEV_OUV_FIELD'
     PRELEV_ASSIETTE_FIELD = 'PRELEV_ASSIETTE_FIELD'
     PRELEV_MILIEU_FIELD = 'PRELEV_MILIEU_FIELD'  # nouveau param : champ type de milieu
+
+    # nouveaux params optionnels pour nom ouvrage et interlocuteur
+    PRELEV_OUV_NAME = 'PRELEV_OUV_NAME'
+    PRELEV_INTERLOC = 'PRELEV_INTERLOC'
 
     AUTOR = 'AUTOR'
     AUTOR_OUV_FIELD = 'AUTOR_OUV_FIELD'
@@ -153,10 +165,21 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
     def shortHelpString(self):
         return self.tr(
             "Agrège les volumes prélevés pour une année donnée par ID ouvrage, joint avec la table des volumes autorisés, "
-            "calcule ratio et % dépassement. Conserve le champ 'type de milieu' (concaténation si plusieurs valeurs)."
+            "calcule ratio et % dépassement. Conserve le champ 'type de milieu' (concaténation si plusieurs valeurs). "
+            "Demande une couche de zone d'étude et ne conserve que les prélèvements situés dans cette zone. "
+            "Si l'année renseignée est 0 (valeur par défaut), le script utilisera la dernière année disponible parmi les prélèvements retenus."
         )
 
     def initAlgorithm(self, config=None):
+        # nouvelle : couche zone d'étude (polygones)
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.ZONE,
+                self.tr("Couche zone d'étude (polygones)"),
+                [QgsProcessing.TypeVectorPolygon]
+            )
+        )
+
         # couche prélèvements (points/table)
         self.addParameter(
             QgsProcessingParameterVectorLayer(
@@ -187,12 +210,31 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
                 parentLayerParameterName=self.PRELEV
             )
         )
-        # nouveau : champ type de milieu
+        # nouveau : champ type de milieu (optionnel)
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_MILIEU_FIELD,
-                self.tr("Champ 'type de milieu' (prélèvements)"),
-                parentLayerParameterName=self.PRELEV
+                self.tr("Champ 'type de milieu' (prélèvements) - optionnel"),
+                parentLayerParameterName=self.PRELEV,
+                optional=True
+            )
+        )
+
+        # nouveaux champs optionnels : nom ouvrage & interlocuteur
+        self.addParameter(
+            QgsProcessingParameterField(
+                self.PRELEV_OUV_NAME,
+                self.tr("Champ nom de l'ouvrage (optionnel, conservé dans la sortie)"),
+                parentLayerParameterName=self.PRELEV,
+                optional=True
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterField(
+                self.PRELEV_INTERLOC,
+                self.tr("Champ interlocuteur (optionnel, conservé dans la sortie)"),
+                parentLayerParameterName=self.PRELEV,
+                optional=True
             )
         )
 
@@ -228,12 +270,13 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         )
 
         # autres paramètres
+        # YEAR: default 0 => use last available year after spatial filtering
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.YEAR,
-                self.tr("Année (ex: 2023)"),
+                self.tr("Année (ex: 2023). Mettre 0 pour utiliser la dernière année disponible"),
                 type=QgsProcessingParameterNumber.Integer,
-                defaultValue=2023
+                defaultValue=0
             )
         )
         self.addParameter(
@@ -268,23 +311,73 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         # read parameters
+        zone_lyr = self.parameterAsVectorLayer(parameters, self.ZONE, context)
         prelev_lyr = self.parameterAsVectorLayer(parameters, self.PRELEV, context)
         prelev_year_field = self.parameterAsString(parameters, self.PRELEV_YEAR_FIELD, context)
         prelev_ouv_field = self.parameterAsString(parameters, self.PRELEV_OUV_FIELD, context)
         prelev_assiette_field = self.parameterAsString(parameters, self.PRELEV_ASSIETTE_FIELD, context)
-        prelev_milieu_field = self.parameterAsString(parameters, self.PRELEV_MILIEU_FIELD, context)
+        prelev_milieu_field = self.parameterAsString(parameters, self.PRELEV_MILIEU_FIELD, context) if self.PRELEV_MILIEU_FIELD in parameters else None
+
+        # optional name & interloc fields
+        prelev_ouv_name_field = None
+        try:
+            prelev_ouv_name_field = self.parameterAsString(parameters, self.PRELEV_OUV_NAME, context)
+            if prelev_ouv_name_field == '':
+                prelev_ouv_name_field = None
+        except Exception:
+            prelev_ouv_name_field = None
+        prelev_interloc_field = None
+        try:
+            prelev_interloc_field = self.parameterAsString(parameters, self.PRELEV_INTERLOC, context)
+            if prelev_interloc_field == '':
+                prelev_interloc_field = None
+        except Exception:
+            prelev_interloc_field = None
 
         autor_lyr = self.parameterAsVectorLayer(parameters, self.AUTOR, context)
         autor_ouv_field = self.parameterAsString(parameters, self.AUTOR_OUV_FIELD, context)
         autor_vol_field = self.parameterAsString(parameters, self.AUTOR_VOL_FIELD, context)
         autor_ddtm_field = self.parameterAsString(parameters, self.AUTOR_DDTM_FIELD, context) if self.AUTOR_DDTM_FIELD in parameters else None
 
-        year_param = int(self.parameterAsInt(parameters, self.YEAR, context))
+        year_param_input = int(self.parameterAsInt(parameters, self.YEAR, context))
         include_unmatched = bool(self.parameterAsBool(parameters, self.INCLUDE_UNMATCHED, context))
         apply_qml = bool(self.parameterAsBool(parameters, self.APPLY_QML, context))
         qml_path_param = self.parameterAsString(parameters, self.QML_PATH, context)
 
-        feedback.pushInfo(self.tr(f"Paramètres : année={year_param}, inclure_unmatched={include_unmatched}, apply_qml={apply_qml}"))
+        feedback.pushInfo(self.tr(f"Paramètres : année={year_param_input} (0 => dernière dispo), inclure_unmatched={include_unmatched}, apply_qml={apply_qml}"))
+
+        # Validate zone layer
+        if zone_lyr is None:
+            raise Exception(self.tr("Paramètre 'Zone d'étude' manquant ou invalide."))
+        if prelev_lyr is None:
+            raise Exception(self.tr("Paramètre 'Couche prélèvements' manquant ou invalide."))
+
+        if zone_lyr.featureCount() == 0:
+            feedback.pushInfo(self.tr("La couche zone d'étude est vide (0 entité). Aucun prélèvement ne sera retenu."))
+
+        # Build spatial index for zone layer (if polygon geometry available)
+        zone_index = None
+        zone_geoms = {}
+        try:
+            # create index only if zone has geometries
+            if zone_lyr.geometryType() != -1 and zone_lyr.featureCount() > 0:
+                zone_index = QgsSpatialIndex()
+                for zf in zone_lyr.getFeatures():
+                    try:
+                        zg = zf.geometry()
+                        if zg is None or zg.isEmpty():
+                            continue
+                        zone_geoms[zf.id()] = zg
+                        zone_index.addFeature(zf)
+                    except Exception:
+                        continue
+                feedback.pushInfo(self.tr(f"Index spatial zone construit ({len(zone_geoms)} géométries)."))
+            else:
+                feedback.pushInfo(self.tr("La couche zone d'étude n'a pas de géométrie exploitable. Filtrage spatial désactivé."))
+                zone_index = None
+        except Exception as e:
+            feedback.pushInfo(self.tr(f"Erreur création index spatial zone : {e}"))
+            zone_index = None
 
         # 1) lire la table des volumes autorisés et construire un index par ID ouvrage
         #    -> prendre MAX(volume autorisé) si plusieurs enregistrements, concatener DDTM distincts
@@ -325,57 +418,177 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
                     entry['ddtm'].add(ddtm_val)
         feedback.pushInfo(self.tr(f"Chargé {autor_count} enregistrements volumes autorisés -> index de {len(autor_index)} clés."))
 
-        # 2) parcourir les prélèvements pour l'année choisie : agréger assiette par ouvrage_id
-        assiette_by_ouv = defaultdict(float)
-        geom_by_ouv = {}  # geometry to put on output (first found for this ouvrage-year)
-        milieu_by_ouv = defaultdict(set)  # collect milieu values per ouvrage (pour concaténation)
+        # 2) parcourir les prélèvements : 1ère passe = filtrage spatial + collecte des années disponibles (si YEAR=0)
         prelev_count = 0
-        skipped_year = 0
+        kept_spatial = 0
+        prelev_has_geom = (prelev_lyr.geometryType() != -1)
+        records = []  # store tuples for second pass: (key, year_int, ass_raw, geom, milieu_raw, name_raw, interloc_raw)
+        available_years = set()
+
         for f in prelev_lyr.getFeatures():
             prelev_count += 1
             if feedback.isCanceled():
                 break
-            # récupérer année (peut être string)
-            y_raw = f[prelev_year_field]
+
+            # spatial filter if applicable
+            if prelev_has_geom and zone_index is not None:
+                try:
+                    fg = f.geometry()
+                    if fg is None or fg.isEmpty():
+                        continue
+                    cands = zone_index.intersects(fg.boundingBox())
+                    if not cands:
+                        continue
+                    inside = False
+                    for fid in cands:
+                        zg = zone_geoms.get(fid)
+                        if zg is None:
+                            try:
+                                zf_tmp = zone_lyr.getFeature(fid)
+                                zg = zf_tmp.geometry() if zf_tmp is not None else None
+                            except Exception:
+                                zg = None
+                        if zg is None:
+                            continue
+                        try:
+                            if zg.contains(fg) or zg.intersects(fg):
+                                inside = True
+                                break
+                        except Exception:
+                            try:
+                                if zg.intersects(fg):
+                                    inside = True
+                                    break
+                            except Exception:
+                                continue
+                    if not inside:
+                        continue
+                except Exception:
+                    # on erreur, exclure la géométrie
+                    continue
+            # passed spatial filter (or no spatial filtering applied)
+            kept_spatial += 1
+
+            # read year (may be string)
+            try:
+                y_raw = f[prelev_year_field]
+            except Exception:
+                continue
             y_int = parse_year_to_int(y_raw)
             if y_int is None:
-                skipped_year += 1
+                # keep record? no - it's unusable for year selection/aggregation
                 continue
+
+            # store available year
+            available_years.add(y_int)
+
+            # read key and other raw fields (we will filter by year later)
+            try:
+                key_raw = f[prelev_ouv_field]
+                if key_raw is None:
+                    continue
+                key = str(key_raw).strip()
+            except Exception:
+                continue
+
+            # assiette raw
+            try:
+                ass_raw = f[prelev_assiette_field]
+            except Exception:
+                ass_raw = None
+
+            # milieu raw (optional)
+            milieu_raw = None
+            if prelev_milieu_field:
+                try:
+                    milieu_raw = f[prelev_milieu_field]
+                except Exception:
+                    milieu_raw = None
+
+            # name & interloc raw (optional)
+            name_raw = None
+            if prelev_ouv_name_field:
+                try:
+                    name_raw = f[prelev_ouv_name_field]
+                except Exception:
+                    name_raw = None
+            interloc_raw = None
+            if prelev_interloc_field:
+                try:
+                    interloc_raw = f[prelev_interloc_field]
+                except Exception:
+                    interloc_raw = None
+
+            # geometry
+            geom = None
+            if prelev_has_geom:
+                try:
+                    geom = f.geometry()
+                except Exception:
+                    geom = None
+
+            records.append((key, y_int, ass_raw, geom, milieu_raw, name_raw, interloc_raw))
+            feedback.setProgress(int(100 * prelev_count / max(1, prelev_lyr.featureCount())))
+
+        feedback.pushInfo(self.tr(f"Prélèvements parcourus: {prelev_count}, conservés après filtrage spatial: {kept_spatial}, années disponibles: {sorted(available_years)}"))
+
+        # determine year to use
+        if year_param_input == 0:
+            if not available_years:
+                raise Exception(self.tr("Aucune année disponible parmi les prélèvements retenus — impossible de déterminer la dernière année."))
+            year_param = max(available_years)
+            feedback.pushInfo(self.tr(f"Aucune année fournie (0) -> usage de la dernière année disponible : {year_param}"))
+        else:
+            year_param = int(year_param_input)
+            feedback.pushInfo(self.tr(f"Année fournie par l'utilisateur : {year_param}"))
+
+        # 3) deuxième passe : agréger assiette par ouvrage pour l'année choisie, collecter géom, milieu, name, interloc
+        assiette_by_ouv = defaultdict(float)
+        geom_by_ouv = {}
+        milieu_by_ouv = defaultdict(set)
+        name_by_ouv = {}
+        interloc_by_ouv = {}
+
+        for rec in records:
+            key, y_int, ass_raw, geom, milieu_raw, name_raw, interloc_raw = rec
             if y_int != year_param:
                 continue
-            # id ouvrage
-            key_raw = f[prelev_ouv_field]
-            if key_raw is None:
-                continue
-            key = str(key_raw).strip()
             # assiette
-            ass_raw = f[prelev_assiette_field]
             ass = parse_number(ass_raw)
             if math.isnan(ass):
                 ass_val = 0.0
             else:
                 ass_val = ass
             assiette_by_ouv[key] += ass_val
-            # geometry -> keep first geometry found for that ouvrage-year
-            if prelev_lyr.geometryType() != -1 and key not in geom_by_ouv:
-                geom = f.geometry()
-                if geom and not geom.isEmpty():
-                    geom_by_ouv[key] = geom
-            # milieu -> collect distinct values (if present)
-            try:
-                milieu_raw = f[prelev_milieu_field]
-                if milieu_raw is not None:
-                    mm = str(milieu_raw).strip()
-                    if mm != '':
-                        milieu_by_ouv[key].add(mm)
-            except Exception:
-                # ignore if field not present or error
-                pass
-            feedback.setProgress(int(100 * prelev_count / max(1, prelev_lyr.featureCount())))
-        feedback.pushInfo(self.tr(f"Prélèvements parcourus: {prelev_count}, enregistrements ignorés par année: {skipped_year}. Ouvrages agrégés: {len(assiette_by_ouv)}"))
+            # geometry -> keep first geometry found
+            if prelev_has_geom and key not in geom_by_ouv and geom is not None and not geom.isEmpty():
+                geom_by_ouv[key] = geom
+            # milieu
+            if prelev_milieu_field and milieu_raw is not None:
+                mm = str(milieu_raw).strip()
+                if mm != '':
+                    milieu_by_ouv[key].add(mm)
+            # name (first non-empty)
+            if prelev_ouv_name_field and name_raw is not None:
+                try:
+                    nm = str(name_raw).strip()
+                    if nm != '' and key not in name_by_ouv:
+                        name_by_ouv[key] = nm
+                except Exception:
+                    pass
+            # interloc (first non-empty)
+            if prelev_interloc_field and interloc_raw is not None:
+                try:
+                    it = str(interloc_raw).strip()
+                    if it != '' and key not in interloc_by_ouv:
+                        interloc_by_ouv[key] = it
+                except Exception:
+                    pass
 
-        # 3) pour chaque ouvrage agrégé, joindre avec autor_index
-        rows_out = []  # tuples of (key, annee, assiette_sum, vol_autorise, ddtm_concat, ratio, ratio_possible, percent_overrun, note, geom, milieu_concat)
+        feedback.pushInfo(self.tr(f"Ouvrages agrégés pour l'année {year_param} : {len(assiette_by_ouv)}"))
+
+        # 4) pour chaque ouvrage agrégé, joindre avec autor_index
+        rows_out = []  # tuples of (key, annee, assiette_sum, vol_autorise, ddtm_concat, ratio, ratio_possible, percent_overrun, note, geom, milieu_concat, name, interloc)
         cnt_included = 0
         cnt_unmatched = 0
         cnt_vol_zero = 0
@@ -418,15 +631,20 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
             # milieu concat
             milset = milieu_by_ouv.get(key, set())
             milieu_concat = ';'.join(sorted(milset)) if milset else None
-            rows_out.append((key, year_param, ass_sum, vol_auth, ddtm_concat, ratio, 1 if ratio_possible else 0, percent_overrun, note, geom, milieu_concat))
+            # name/interloc
+            nm = name_by_ouv.get(key) if name_by_ouv.get(key) is not None else None
+            itc = interloc_by_ouv.get(key) if interloc_by_ouv.get(key) is not None else None
+            rows_out.append((key, year_param, ass_sum, vol_auth, ddtm_concat, ratio, 1 if ratio_possible else 0, percent_overrun, note, geom, milieu_concat, nm, itc))
             cnt_included += 1
 
         feedback.pushInfo(self.tr(f"Ouvrages inclus dans la sortie : {cnt_included} (non appariés exclus: {cnt_unmatched}) ; vols autorisés nuls: {cnt_vol_zero}"))
 
-        # 4) préparer sink et écrire la couche de sortie (géométrie = de la couche prélèvements si disponible)
+        # 5) préparer sink et écrire la couche de sortie (géométrie = de la couche prélèvements si disponible)
         out_fields = QgsFields()
         out_fields.append(QgsField('annee', QVariant.Int))
         out_fields.append(QgsField('ouvrage_id', QVariant.String))
+        out_fields.append(QgsField('ouvrage_name', QVariant.String))     # nouveau champ
+        out_fields.append(QgsField('interlocuteur', QVariant.String))    # nouveau champ
         out_fields.append(QgsField('assiette', QVariant.Double))
         out_fields.append(QgsField('vol_autorise', QVariant.Double))
         out_fields.append(QgsField('ddtm_id', QVariant.String))
@@ -448,11 +666,13 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         for i, rec in enumerate(rows_out):
             if feedback.isCanceled():
                 break
-            key, annee, ass_sum, vol_auth, ddtm_concat, ratio, ratio_possible_int, percent_overrun, note, geom, milieu_concat = rec
+            key, annee, ass_sum, vol_auth, ddtm_concat, ratio, ratio_possible_int, percent_overrun, note, geom, milieu_concat, nm, itc = rec
             feat = QgsFeature()
             feat.setFields(out_fields)
             feat['annee'] = int(annee)
             feat['ouvrage_id'] = str(key)
+            feat['ouvrage_name'] = str(nm) if nm is not None else None
+            feat['interlocuteur'] = str(itc) if itc is not None else None
             feat['assiette'] = float(ass_sum) if ass_sum is not None else None
             feat['vol_autorise'] = float(vol_auth) if vol_auth is not None else None
             feat['ddtm_id'] = str(ddtm_concat) if ddtm_concat is not None else None
@@ -475,7 +695,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
 
         feedback.pushInfo(self.tr(f"Ecriture terminée : {written} entités écrites."))
 
-        # 5) appliquer QML si demandé
+        # 6) appliquer QML si demandé
         try:
             if apply_qml:
                 result_layer = QgsProcessingUtils.mapLayerFromString(dest_id, context)

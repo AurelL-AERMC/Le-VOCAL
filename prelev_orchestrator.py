@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Prelev Orchestrator plugin - updated version with additional program integration
-Remplace intégralement le fichier prelev_orchestrator.py précédent.
+## Présentation rapide
+VOCAL est un plugin QGIS qui facilite :
+- la préparation d'une zone d'étude (chargement / extraction mémoire),
+- la copie automatique des scripts Processing (dans `Processing/scripts` utilisateur) pour rendre accessibles plusieurs algorithmes de valorisation personnalisés,
+- le lancement gui-friendly des algorithmes de traitement (pentes, ratios, etc.).
+Les outils de valorisation sont portés par les algorithmes, le plugin n'est qu'un orchestrateur de ces programmes.
 
-Cette version ajoute l'algorithme :
-  - "Etat de la connaissance Agence des ouvrages de prélèvements d'eau"
-    id recommandé (tel que fourni) : 'script:compute_connaissance_ouvrages_agence'
-    script filename : compute_connaissance_ouvrages_agence.py
+Le plugin fournit une interface en 2 étapes :
+1. choix du programme + choix et chargement de la zone d'étude et potentiellement des sous-zones de travails (avec option pour créer une couche mémoire restreinte)
+2. copie des scripts et ouverture automatique de la boîte d'outil Processing pour l'algorithme sélectionné.
 
-Le comportement du plugin reste identique : il prépare la zone d'étude,
-copie les scripts réseau dans le dossier Processing/scripts utilisateur si nécessaire,
-et ouvre la boîte de dialogue native Processing pour l'algorithme choisi.
+Plus d'information dans le README ou sur le Repo Github https://github.com/AurelL-AERMC/Le-VOCAL
+
 """
 
 import os
@@ -68,13 +70,12 @@ ALGO_INFOS = {
         'alg_id': 'script:zones_compare_prelev_autorise',
         'script_name': 'compute_ratio_VPVA_zonages.py'
     },
-    
+    # Newly added program integration
     "État connaissance - ouvrages Agence": {
         # use the exact id you provided (include 'script:' prefix if that's how it appears in the Toolbox)
         'alg_id': 'script:compute_connaissance_ouvrages_agence',
         'script_name': 'compute_connaissance_ouvrages_agence.py'
     }
-    #D'autres programmes peuvent etre ajouter ici. Attention aux noms des programmes en mettant script: devant.
 }
 
 # ---------------- Helpers ----------------
@@ -262,7 +263,7 @@ def ensure_scripts_in_user_folder(feedback=None):
 class PrelevOrchestratorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent or iface.mainWindow())
-        self.setWindowTitle('Le VOCAL')
+        self.setWindowTitle('Orchestrateur — Prélèvements (lanceur)')
         self.resize(920, 560)
 
         # stacked pages
@@ -710,7 +711,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
             QtWidgets.QMessageBox.information(self, 'Algorithme manquant',
                 f"L'algorithme {alg_id} n'est pas trouvé dans le Toolbox.\n"
                 "Nous avons copié les scripts réseau vers ton dossier Processing/scripts utilisateur (si disponible).\n"
-                "Si l'algorithme n'apparaît pas, redémarre QGIS.\n\n"
+                "Si l'algorithme n'apparaît pas, redémarre QGIS ou va dans Processing > Toolbox > Refresh (icône).\n\n"
                 f"Script source (réseau) : {os.path.join(NETWORK_SCRIPTS_FOLDER, info.get('script_name','-'))}")
             return
 
@@ -750,15 +751,40 @@ class PrelevOrchestratorPlugin:
         self.action = None
 
     def initGui(self):
-        self.action = QtWidgets.QAction('Le VOCAL', self.iface.mainWindow())
+        # Try to load icon.png from plugin folder
+        icon_path = os.path.join(PLUGIN_DIR, 'icon.png')
+        qicon = None
+        if os.path.exists(icon_path):
+            try:
+                qicon = QtGui.QIcon(icon_path)
+            except Exception:
+                qicon = None
+
+        # Create action. If icon found, create an icon-only action (empty text) with tooltip.
+        if qicon and not qicon.isNull():
+            self.action = QtWidgets.QAction(qicon, '', self.iface.mainWindow())
+            self.action.setToolTip('Le VOCAL')
+        else:
+            # fallback to text if icon not available
+            self.action = QtWidgets.QAction('Orchestrateur prélèvements', self.iface.mainWindow())
+
         self.action.triggered.connect(self.run)
+
+        # Add to menu and toolbar
+        # note: addPluginToMenu still needs a text label; we pass a readable menu name.
         self.iface.addPluginToMenu('&Prelev Orchestrator', self.action)
         self.iface.addToolBarIcon(self.action)
 
     def unload(self):
         if self.action:
-            self.iface.removePluginMenu('&Prelev Orchestrator', self.action)
-            self.iface.removeToolBarIcon(self.action)
+            try:
+                self.iface.removePluginMenu('&Prelev Orchestrator', self.action)
+            except Exception:
+                pass
+            try:
+                self.iface.removeToolBarIcon(self.action)
+            except Exception:
+                pass
 
     def run(self):
         dlg = PrelevOrchestratorDialog(iface.mainWindow())

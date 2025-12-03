@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+## Objectifs
+Calculer, pour chaque ouvrage identifié, l'évolution temporelle des volumes prélevés par année. Produit des indicateurs normalisés : pentes en % par rapport à la moyenne, CAGR (growth rate) et z-score.
+## Sortie
+Couche (points ou mémoire) contenant par ouvrage : `ouvrage_id`, `slope_ouvrage`, `n_years_ouvrage`, `name_ouv`, `name_petitionaire`, `mean_vol_ouv`, `slope_pct_mean`, `slope_pct_first`, `cagr_pct`, `slope_pct_z`.
+
+## Notes & recommandations
+- Theil-Sen est recommandé s'il existe des valeurs aberrantes.
+- Calculer les pentes sur des séries avec un nombre minimal d'années (paramétrable).
+- Conserver la géométrie du premier point trouvé par ouvrage pour cartographie.
+
+Note d'analyse des indicateurs : 
+La _pente_ _(slope)_ mesure l’évolution moyenne absolue du volume prélevé par ouvrage en m³/an (estimée par régression _OLS_ ou _Theil-Sen_) et renseigne l’ampleur physique du changement. Le _slope_pct_mean_ exprime cette pente en pourcentage de la moyenne des volumes de l’ouvrage (100 × slope / mean), ce qui permet de comparer la dynamique relative entre ouvrages de tailles différentes. Le _slope_pct_first_ normalise la pente par rapport au niveau initial, la moyenne des 3 premières années, pour évaluer la variation par rapport au point de départ. Enfin, le _CAGR_ (_taux de croissance annuel composé_) synthétise la croissance équivalente entre une période de départ et une période finale ( moyenne 3 premières vs 3 dernières années) ; il est utile pour résumer une trajectoire début→fin mais masque les fluctuations intermédiaires.
+
+"""
+
 from qgis.PyQt.QtCore import QVariant
 from qgis.core import (
     QgsProcessing,
@@ -15,6 +32,8 @@ from qgis.core import (
     QgsFields,
     QgsFeatureSink,
     QgsProcessingUtils,
+    QgsSpatialIndex,
+    QgsProcessingException
 )
 import math
 from collections import defaultdict
@@ -134,9 +153,13 @@ def compute_slope_years(years, values, method='OLS'):
 class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
     """Algorithme Processing : calcule pentes et indicateurs POUR CHAQUE OUVRAGE (sans BV)."""
 
+    # Ajout du paramètre ZONE
+    ZONE = 'ZONE'
     INPUT = 'INPUT'
     YEAR = 'YEAR'
     OUVRAGE = 'OUVRAGE'
+    OUV_NAME = 'OUV_NAME'        # nouveau param : champ nom de l'ouvrage (optionnel)
+    INTERLOC = 'INTERLOC'       # nouveau param : champ interlocuteur (optionnel)
     VOL = 'VOL'
     METHOD = 'METHOD'
     MIN_YEARS = 'MIN_YEARS'
@@ -171,6 +194,15 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         )
 
     def initAlgorithm(self, config=None):
+        # couche zone d'étude en première question
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.ZONE,
+                self.tr("Couche zone d'étude (polygones) - toutes les entités seront prises en compte"),
+                [QgsProcessing.TypeVectorPolygon]
+            )
+        )
+
         self.addParameter(
             QgsProcessingParameterVectorLayer(self.INPUT, self.tr("Couche d'entrée (points/table)"), [QgsProcessing.TypeVectorAnyGeometry])
         )
@@ -180,6 +212,21 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(self.OUVRAGE, self.tr("Champ identifiant ouvrage"), parentLayerParameterName=self.INPUT)
         )
+
+        # nouveaux paramètres pour le nom de l'ouvrage et l'interlocuteur (tous deux optionnels)
+        self.addParameter(
+            QgsProcessingParameterField(self.OUV_NAME,
+                                       self.tr("Champ nom de l'ouvrage (sera conservé dans la sortie, optionnel)"),
+                                       parentLayerParameterName=self.INPUT,
+                                       optional=True)
+        )
+        self.addParameter(
+            QgsProcessingParameterField(self.INTERLOC,
+                                       self.tr("Champ nom de l'interlocuteur (optionnel)"),
+                                       parentLayerParameterName=self.INPUT,
+                                       optional=True)
+        )
+
         self.addParameter(
             QgsProcessingParameterField(self.VOL, self.tr("Champ volume (Assiette)"), parentLayerParameterName=self.INPUT)
         )
@@ -208,9 +255,25 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         )
 
     def processAlgorithm(self, parameters, context, feedback):
+        zone_layer = self.parameterAsVectorLayer(parameters, self.ZONE, context)
+        if zone_layer is None:
+            raise QgsProcessingException(self.tr("La couche zone d'étude n'a pas pu être chargée."))
+
         layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
+        if layer is None:
+            raise QgsProcessingException(self.tr("La couche d'entrée n'a pas pu être chargée."))
+
         year_field = self.parameterAsString(parameters, self.YEAR, context)
         ouvrage_field = self.parameterAsString(parameters, self.OUVRAGE, context)
+
+        # récupère les noms de champs optionnels ; si vide -> None
+        ouvrage_name_field = self.parameterAsString(parameters, self.OUV_NAME, context) if self.OUV_NAME in parameters else None
+        if isinstance(ouvrage_name_field, str) and ouvrage_name_field.strip() == '':
+            ouvrage_name_field = None
+        interloc_field = self.parameterAsString(parameters, self.INTERLOC, context) if self.INTERLOC in parameters else None
+        if isinstance(interloc_field, str) and interloc_field.strip() == '':
+            interloc_field = None
+
         vol_field = self.parameterAsString(parameters, self.VOL, context)
         method_idx = self.parameterAsInt(parameters, self.METHOD, context)
         method = ['OLS', 'Theil-Sen'][method_idx]
@@ -220,36 +283,159 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         apply_qml = bool(self.parameterAsBool(parameters, self.APPLY_QML, context))
         qml_path_param = self.parameterAsString(parameters, self.QML_PATH, context)
 
-        # lecture et filtrage initial
+        # --- Préparer l'index spatial pour la couche zone ---
+        zone_feats = []
+        try:
+            for zf in zone_layer.getFeatures():
+                zone_feats.append(zf)
+        except Exception:
+            zone_feats = []
+
+        if not zone_feats:
+            feedback.pushInfo(self.tr("Attention : la couche zone est vide -> aucun filtrage effectué (aucune entité)."))
+            zone_index = None
+            zone_feat_by_id = {}
+        else:
+            # crée un index spatial pour accélérer les recherches d'intersection
+            try:
+                zone_index = QgsSpatialIndex()
+                zone_feat_by_id = {}
+                for zf in zone_feats:
+                    zone_index.insertFeature(zf)
+                    zone_feat_by_id[zf.id()] = zf
+                feedback.pushInfo(self.tr(f"Index spatial construit pour la couche zone ({len(zone_feats)} entités)."))
+            except Exception as e:
+                feedback.pushInfo(self.tr(f"Impossible de construire l'index spatial (fallback) : {e}"))
+                zone_index = None
+                zone_feat_by_id = {zf.id(): zf for zf in zone_feats}
+
+        # lecture et filtrage initial : on ne garde que les prélèvements qui intersectent la zone
         rows = []
         has_geometry = (layer.geometryType() != -1)
         geom_by_ouvrage = {}
+        # mappings pour nom & interlocuteur (on garde la valeur associée à la DERNIERE année connue)
+        name_by_ouvrage = {}
+        name_year_by_ouvrage = {}        # stocke l'année associée à name_by_ouvrage
+        interloc_by_ouvrage = {}
+        interloc_year_by_ouvrage = {}
+
         total = layer.featureCount()
         processed = 0
+        kept_by_zone = 0
         for f in layer.getFeatures():
             processed += 1
             if feedback.isCanceled():
                 break
+
+            # si la couche d'entrée a une géométrie, tester l'intersection avec la zone
+            if has_geometry:
+                try:
+                    fg = f.geometry()
+                except Exception:
+                    fg = None
+                if fg is None or fg.isEmpty():
+                    # pas de géométrie -> exclu
+                    feedback.setProgress(int(100 * processed / max(1, total)))
+                    continue
+
+                intersects_zone = False
+                if zone_index is not None:
+                    try:
+                        # recherche de candidats par bbox
+                        cand_ids = zone_index.intersects(fg.boundingBox())
+                        for cid in cand_ids:
+                            zf = zone_feat_by_id.get(cid)
+                            if zf is None:
+                                continue
+                            try:
+                                zg = zf.geometry()
+                                if zg is not None and not zg.isEmpty() and zg.intersects(fg):
+                                    intersects_zone = True
+                                    break
+                            except Exception:
+                                continue
+                    except Exception:
+                        # fallback : test direct sur toutes les géométries
+                        for zf in zone_feats:
+                            try:
+                                zg = zf.geometry()
+                                if zg is not None and not zg.isEmpty() and zg.intersects(fg):
+                                    intersects_zone = True
+                                    break
+                            except Exception:
+                                continue
+                else:
+                    # pas d'index : brute force
+                    for zf in zone_feats:
+                        try:
+                            zg = zf.geometry()
+                            if zg is not None and not zg.isEmpty() and zg.intersects(fg):
+                                intersects_zone = True
+                                break
+                        except Exception:
+                            continue
+
+                if not intersects_zone:
+                    # non dans la zone -> ignorer
+                    feedback.setProgress(int(100 * processed / max(1, total)))
+                    continue
+                else:
+                    kept_by_zone += 1
+
+            # récupérer champs
             try:
                 y = f[year_field]
                 o = f[ouvrage_field]
                 v_raw = f[vol_field]
             except Exception:
                 raise Exception(self.tr("Impossible de lire au moins un des champs fournis. Vérifie les paramètres."))
+
             try:
                 yv = int(y)
             except:
+                # année non convertible -> ignorer
+                feedback.setProgress(int(100 * processed / max(1, total)))
                 continue
             if yv < start_year or yv > end_year:
+                feedback.setProgress(int(100 * processed / max(1, total)))
                 continue
+
+            # récupérer nom & interlocuteur (si champs fournis) -> on garde la valeur de la DERNIERE année
+            try:
+                if ouvrage_name_field:
+                    raw_name = f[ouvrage_name_field]
+                    if raw_name is not None and str(raw_name).strip() != '':
+                        prev_year = name_year_by_ouvrage.get(o, -9999)
+                        # on prend la valeur si l'année courante >= année stockée (garde la plus récente)
+                        if yv >= prev_year:
+                            name_by_ouvrage[o] = str(raw_name).strip()
+                            name_year_by_ouvrage[o] = yv
+            except Exception:
+                pass
+            try:
+                if interloc_field:
+                    raw_int = f[interloc_field]
+                    if raw_int is not None and str(raw_int).strip() != '':
+                        prev_year_i = interloc_year_by_ouvrage.get(o, -9999)
+                        if yv >= prev_year_i:
+                            interloc_by_ouvrage[o] = str(raw_int).strip()
+                            interloc_year_by_ouvrage[o] = yv
+            except Exception:
+                pass
+
             vv = parse_number(v_raw)
             rows.append((o, yv, vv))
             if has_geometry and o not in geom_by_ouvrage:
-                geom_by_ouvrage[o] = f.geometry()
-            feedback.setProgress(int(100 * processed / total))
+                try:
+                    geom_by_ouvrage[o] = f.geometry()
+                except Exception:
+                    pass
+            feedback.setProgress(int(100 * processed / max(1, total)))
+
+        feedback.pushInfo(self.tr(f"Prélèvements parcourus: {processed}, conservés après filtrage spatial: {kept_by_zone}, enregistrements retenus pour la période: {len(rows)}."))
 
         if not rows:
-            raise Exception(self.tr("Aucune donnée lue pour la période sélectionnée."))
+            raise Exception(self.tr("Aucune donnée lue après application du filtre zone / période."))
 
         # --- AGREGATION DES VOLUMES PAR (ouvrage, year) ---
         ouvrage_year_sum = defaultdict(float)   # key (ouvrage, year) -> sum
@@ -363,6 +549,8 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         # --- PREPARER LE SINK DE SORTIE (QgsFields) ---
         out_fields = QgsFields()
         out_fields.append(QgsField('ouvrage_id', QVariant.String))
+        out_fields.append(QgsField('ouvrage_name', QVariant.String))     # nouveau champ
+        out_fields.append(QgsField('interlocuteur', QVariant.String))    # nouveau champ (peut être vide)
         out_fields.append(QgsField('slope_ouvrage', QVariant.Double))
         out_fields.append(QgsField('n_years_ouvrage', QVariant.Int))
         # normalization fields
@@ -385,6 +573,16 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
             feat = QgsFeature()
             feat.setFields(out_fields)
             feat['ouvrage_id'] = str(o)
+            # new fields: name & interlocuteur (use stored mappings if present; these are values from the latest year seen)
+            try:
+                feat['ouvrage_name'] = name_by_ouvrage.get(o, None)
+            except Exception:
+                feat['ouvrage_name'] = None
+            try:
+                feat['interlocuteur'] = interloc_by_ouvrage.get(o, None)
+            except Exception:
+                feat['interlocuteur'] = None
+
             val_ouv = ouvrage_to_slope.get(o)
             feat['slope_ouvrage'] = float(val_ouv) if val_ouv is not None else None
             feat['n_years_ouvrage'] = int(ouvrage_to_nyears.get(o, 0))
@@ -397,7 +595,10 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
             feat['slope_pct_z'] = float(ouvrage_slope_pct_z.get(o)) if ouvrage_slope_pct_z.get(o) is not None else None
             # geometry
             if has_geometry and o in geom_by_ouvrage:
-                feat.setGeometry(geom_by_ouvrage[o])
+                try:
+                    feat.setGeometry(geom_by_ouvrage[o])
+                except Exception:
+                    pass
             # insertion dans le sink
             try:
                 sink.addFeature(feat, QgsFeatureSink.FastInsert)
