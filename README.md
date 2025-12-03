@@ -65,7 +65,7 @@ Pour l'option A : les couches lourdes (GeoPackage, bases de fonds)sont embarqué
 
 # Programme 1 — Evolution des prélèvements par ouvrage (`compute_slopes_ouvrage_only`)
 
-## Objectif
+## Objectifs
 Calculer, pour chaque ouvrage identifié, l'évolution temporelle des volumes prélevés par année. Produit des indicateurs normalisés : pentes en % par rapport à la moyenne, CAGR (growth rate) et z-score.
 
 ## Paramètres principaux
@@ -94,7 +94,7 @@ La _pente_ _(slope)_ mesure l’évolution moyenne absolue du volume prélevé p
 
 # Programme 2 — Evolution des prélèvements par zonage (`compute_slopes_zones`)
 
-## Objectif
+## Objectifs
 Calculer des évolutions temporelles de prélèvements pour des zones (communes, BV, polygones projetés) en agrégeant les volumes des ouvrages situés dans chaque zone.
 
 ## Différences avec le Programme 1
@@ -102,26 +102,31 @@ Calculer des évolutions temporelles de prélèvements pour des zones (communes,
 - Utilisation d'intersections spatiales pour assigner chaque ouvrage à un ou plusieurs zones (selon la logique choisie).
 
 ## Paramètres
-- **Couche zonage** (polygone)
-- **Couche prélèvements**
-- **Champ année, champ volume**
+- **Couche zonage** (polygone) (obligatoire)
+- **Couche d'entrée (points / table)** : prélèvements Agence.
+- **Champ année** (numérique ou convertible) (obligatoire)
+- **Champ identifiant ouvrage** (obligatoire)
+- **Champ volume (assiette)** (obligatoire)
+- **Méthode** : `OLS` ou `Theil-Sen` (Thiel-Sen plus robuste) (obligatoire)
+- **Années min / plage (start/end)** (obligatoire)
+- **Appliquer QML** (optionnel)
 - Options d'agrégation (contiguïté/centré, gestion des doublons)
 
 ## Sortie
-Couche zonage enrichie avec pentes et indicateurs par zone.
+Couche des zones enrichie avec des indicateurs d'évolution par zone. Pour l'explication des indicateurs voir _Programme 1_.
 
 ---
 
-# Page Programme 3 — Ratio VP/VA par ouvrage (`compare_prelevements_autorises`)
+# Programme 3 — Ratio Volumes prélevés (VP)/Volumes autorisés (VA) par ouvrage (`compare_prelevements_autorises`)
 
-## But
-Pour une année donnée, comparer le volume prélevé (VP, "assiette") à un volume autorisé (VA) issu d'une autre table (autorisation). Déterminer les dépassements et fournir un indicateur de ratio.
+## Objectifs
+Pour une année donnée, comparer le volume prélevé (VP, "assiettes" retenues à l'Agence) à un volume autorisé (VA, arrétés de déclaration ou d'autorisation DDTM). Déterminer les dépassements et fournir des indicateurs de ce ratio.
 
 ## Paramètres
 - **Couche zone d'étude** (polygones) : filtre spatial facultatif mais recommandé.
 - **Couche prélèvements** : champs année, id ouvrage, assiette (volume), champ type de milieu (optionnel), champ nom ouvrage & interlocuteur (optionnels).
-- **Couche volumes autorisés** : champ ID ouvrage, champ volume autorisé (VA), champ DDTM (optionnel).
-- **Année** : mettre 0 pour utiliser la dernière année disponible (option ajoutée).
+- **Couche volumes autorisés** : champ ID ouvrage, champ volume autorisé (VA), champ ID DDTM (optionnel).
+- **Année d'étude** : mettre 0 pour utiliser la dernière année disponible.
 - **Inclure non-appariés** : booléen.
 - **Appliquer QML** : chemin du QML (optionnel)
 
@@ -134,6 +139,10 @@ Pour une année donnée, comparer le volume prélevé (VP, "assiette") à un vol
 ## Sortie
 Couche par ouvrage pour l'année choisie : `annee`, `ouvrage_id`, `ouvrage_name`, `interlocuteur`, `assiette`, `vol_autorise`, `ddtm_id`, `ratio`, `ratio_possible`, `percent_overrun`, `note`, `type_milieu`.
 
+## Note sur les indicateurs
+- Le ratio représente réellement la division du VP/VA
+- Le %overrun présente le pourcentage que représente le VP/VA. 
+
 ## Recommandations QML
 - Utiliser `data-defined` properties (size, outline, fill, shape) pour afficher :
   - halo si dépassement (ex : grande taille semi-transparente),
@@ -143,58 +152,68 @@ Couche par ouvrage pour l'année choisie : `annee`, `ouvrage_id`, `ouvrage_name`
 
 ---
 
-# Page Programme 4 — Ratio VP/VA par zonage (`zones_compare_prelev_autorise`)
+# Programme 4 — Ratio Volumes prélevés (VP)/Volumes autorisés (VA) pour des zones définies (`zones_compare_prelev_autorise`)
 
-## But
-Comme le programme 3, mais agrégé par zone (somme des volumes prélevés par zone) pour une année donnée et comparaison avec volumes autorisés agrégés si disponible.
+## Objectif
+Similaire au programme 3 mais agrégé par zone (somme des volumes prélevés par zone) pour une année donnée et comparaison avec volumes autorisés agrégés si disponible. Ce calcul est simplement la pour afficher un problème structurel sur un territoire donné.
 
 ## Paramètres & Sortie
 Analogue à `compare_prelevements_autorises` mais à l'échelle du zonage.
+- **Couche zonage** (polygone) (obligatoire)
+
+## Note sur les indicateurs
+- Les indicateurs sont les mêmes que pour le _Programme 3_
+
 
 ---
 
-# Page Programme 5 — État connaissance - ouvrages Agence (`compute_connaissance_ouvrages_agence`)
+# Programme 5 — État connaissance - ouvrages Agence (`compute_connaissance_ouvrages_agence`)
 
-## But
+## Objectifs
 Fournir un diagnostic de la qualité / complétude des ouvrages connus par l'Agence :
 - lister les ouvrages sans propriétaire renseigné,
-- compter les ouvrages sans coordonnées,
-- détecter doublons potentiels,
+- lister les ouvrages sans coordonnées,
+- lister les modifications récentes sur les ouvrages
 - produire des métriques de complétude (nombre d'attributs essentiels manquants) par zone.
 
 ## Paramètres
-- Couche ouvrages Agence
+- Couche ouvrages Agence (Issues des redevances ou du QGIS mutualisé Agence de l'eau)
 - (Optionnel) couche zone pour agrégation
-- Seuils / règles de détection (ex : distance de rapprochement pour doublons)
+- Seuils / règles de détection (ex : date de modification)
 
 ## Sorties
 - Table résumée par ouvrage (qualité des données),
 - Couche mémoire des entités problématiques (manque coord, propriétaire absent, etc.),
 - Rapport textuel sommaire (optionnel).
 
----
 
-# Exemple de structure GitHub recommandée
-
-```
-VOCAL-Plugin/
-├── prelev_orchestrator/     # plugin QGIS
-│   ├── __init__.py
-│   ├── prelev_orchestrator.py
-│   ├── resources.qrc
-│   ├── resources.py        # généré (ou non)
-│   ├── icons/icon.png
-│   └── ...
-├── scripts/                 # scripts Processing (5 fichiers .py)
-├── QML/
-├── docs/README.md           # (ce fichier ou variantes)
-├── Couches/                 # optionnel (ne pas inclure dans le zip plugin public)
-└── README.md
-```
 
 ---
 
-# Troubleshooting & FAQ (réponses aux problèmes rencontrés)
+# Structure du Plugin
+
+```
+VOCAL_Plugin/
+├── prelev_orchestrator.py     # plugin QGIS
+├── scripts/   # Scripts Processing (5 fichiers .py)
+│   ├── compute_connaissance_ouvrages_agence.py
+│   ├── zones_compare_prelev_autorise.py
+│   ├── compare_prelevements_autorises.py       
+│   ├── compute_slopes_zones.py
+│   └── compute_slopes_ouvrage_only.py              
+├── QML/	# Dossier contenant les QML des couches de bases et des couches de sorties des algorithmes
+├── __init__.py
+├── README.md           # Information concernant le Plugin (ce document)
+├── Couches/   # Dossier contenant des couches de bases
+├── metadata.txt     # Données d'information de lancement du plugin
+├── icon.png  	# Icone du Plugin
+└── LICENSE  # License de distribution
+
+```
+
+---
+
+# Problèmes possibles, débuggage & FAQ
 
 ### QML : `unexpected character` lors du chargement
 - Cela peut venir d'un caractère non-utf8, d'une erreur de guillemets ou d'un commentaire mal placé.
@@ -207,40 +226,14 @@ VOCAL-Plugin/
 ### Ma couche projet ne s'affiche pas correctement après `loadNamedStyle`
 - Vérifie la correspondance des noms de champs utilisés dans le QML et la couche réelle ; dans tes QML utilises `@layer` ou remplace le nom du champ dynamiquement.
 
----
-
-# Bonnes pratiques pour la cartographie (QML)
-- `halo` pour alerter (dépassement) : symbole large, translucide en `MapUnit`.
-- `circle` en back / front layering : back = volume autorisé (plus grand), front = prélevé.
-- `data-defined` pour `size`, `fill_color`, `outline_width`, `symbol name` (circle/ star) : permet d'exprimer plusieurs dimensions simultanément.
-- pour des symbologies combinées (couleur + forme + taille) : créer un renderer `categorized` sur un champ de classification principale et définir le reste via `data-defined`.
-
----
-
-# CONTRIBUTING / Licence
-- Propose d'utiliser une licence permissive (MIT / CeCILL) selon la politique de ton organisme.
-- Ajoute `CONTRIBUTING.md` pour décrire le workflow Git (branching, code style, tests).
 
 ---
 
 # Contacts / support
-- Auteur : Aurel Lashermes (local contact dans le projet).
+- Auteur : Aurel Lashermes.
+- Structure porteuse du projet : Délégation de Montpellier de l'Agence de l'Eau RMC
+- Date : _Automne 2025_
 - Tracker GitHub : ouvrir des *issues* pour bugs/ameliorations.
 
 ---
-
-# Changelog (synthèse récente)
-- Ajout : paramètre zone d'étude + filtrage spatial pour plusieurs scripts.
-- Ajout : champs optionnels `ouvrage_name` & `interlocuteur` et conservation dans les sorties.
-- Ajout : comportement `YEAR=0` -> utiliser la dernière année disponible dans `compare_prelevements_autorises`.
-- Réfactors pour compatibilité QGIS3.40+.
-
----
-
-# Fichiers référence / exemples
-- Fournir un petit gpkg de test (ex: `Couches/test_small.gpkg`) avec une couche `prelevements` et une `autorises` pour tester rapidement les algos.
-
----
-
-Merci — si tu veux que je génère automatiquement les fichiers `README` scindés (un fichier markdown par programme dans `docs/`), je peux produire ces fichiers maintenant dans le canevas (ou préparer les contenus prêts à coller sur GitHub).
 
