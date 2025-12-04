@@ -22,7 +22,7 @@ Les pages suivent dans ce même document.
 
 ---
 
-#Le VOCAL — Projet & Plugin
+# Le VOCAL — Projet & Plugin
 
 ## Présentation rapide
 VOCAL est un plugin QGIS qui facilite :
@@ -51,6 +51,9 @@ Le plugin fournit une interface en 2 étapes :
 ### 2) Données auxiliaires (couches de référence)
 - Pour l'option A : les couches lourdes (GeoPackage, bases de fonds)sont embarquées dans le ZIP du plugin.
 - **!! PAS ENCORE DISPONIBLE !!** Pour l'option B : Un mécanisme de téléchargement à la première ouverture va être ajoutés via script interne pour automatiser la récupération des gpkg depuis GitHub Releases. outés via script interne) pour automatiser la récupération des gpkg depuis GitHub Releases.
+
+
+#### Vérifier l'installation de l'extension *Processing*, elle est nécessaire au bon fonctionnement du Plugin.
 
 
 ## Utilisation basique (workflow)
