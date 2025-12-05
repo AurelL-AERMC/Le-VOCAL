@@ -54,28 +54,29 @@ BV_FIELD = 'lib_ssbv'
 
 # ---------------- Added/Updated Algorithms ----------------
 ALGO_INFOS = {
-    'Pentes par ouvrage': {
+    'Evolution des volumes prélevés par ouvrage': {
         'alg_id': 'script:compute_slopes_ouvrage_only',
         'script_name': 'compute_slopes_qgis_ouvrages.py'
     },
-    'Pentes par zonage': {
+    'Evolution des volumes prélevés agrégés par zone': {
         'alg_id': 'script:compute_slopes_zones',
         'script_name': 'compute_slopes_qgis_zonages.py'
     },
-    'Ratio VP/ VA par ouvrage': {
+    'Ratio VolPrelev/VolAutorise par ouvrage': {
         'alg_id': 'script:compare_prelevements_autorises',
         'script_name': 'compute_ratio_VPVA_ouvrages.py'
     },
-    'Ratio VP/ VA par zonage': {
+    'Ratio VolPrelev/VolAutorise par zonage': {
         'alg_id': 'script:zones_compare_prelev_autorise',
         'script_name': 'compute_ratio_VPVA_zonages.py'
     },
-    # Newly added program integration
+    
     "État connaissance - ouvrages Agence": {
         # use the exact id you provided (include 'script:' prefix if that's how it appears in the Toolbox)
         'alg_id': 'script:compute_connaissance_ouvrages_agence',
         'script_name': 'compute_connaissance_ouvrages_agence.py'
     }
+    #Ajouter ici un nouveau programme si besoin
 }
 
 # ---------------- Helpers ----------------
