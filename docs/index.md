@@ -1,7 +1,10 @@
 ---
-title: Accueil
+title: Documentation
+parent: Accueil
 nav_order: 1
+has_children : true
 ---
+
 
 
 # Documentation VOCAL

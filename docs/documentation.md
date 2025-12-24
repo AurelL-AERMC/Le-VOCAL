@@ -1,5 +1,6 @@
 ---
 title: Installation
+parent: Accueil
 nav_order: 4
 ---
 
