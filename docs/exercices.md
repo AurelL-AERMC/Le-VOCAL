@@ -1,9 +1,7 @@
 ---
-layout: default
-title: Exercices
+title: Installation
+nav_order: 3
 ---
-{% include nav.md %}
-
 
 # Exercices
 

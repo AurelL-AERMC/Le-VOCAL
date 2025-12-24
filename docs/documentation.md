@@ -1,8 +1,7 @@
 ---
-layout: default
-title: Documentation
+title: Installation
+nav_order: 4
 ---
-{% include nav.md %}
 
 
 # Documentation utilisateur
