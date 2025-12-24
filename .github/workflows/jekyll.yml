@@ -1,4 +1,5 @@
 name: Build and deploy Jekyll site
+run: bundle exec jekyll build --baseurl "/Le-VOCAL"
 
 on:
   push:
