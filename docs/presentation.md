@@ -1,9 +1,7 @@
 ---
-layout: default
-title: Présentation
+title: Installation
+nav_order: 2
 ---
-
-{% include nav.md %}
 
 
 # Présentation du projet
