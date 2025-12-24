@@ -14,3 +14,17 @@ back_to_top: true
 back_to_top_text: "Retour en haut"
 
 color_scheme: light
+
+logo: "/Le-VOCAL/assets/images/logo-vocal.png"
+
+toc:
+  title: "Table des matières"
+
+footer_content: >
+  <strong>Aurel Lashermes</strong> – Délégation de Montpellier de l’Agence de l’eau RMC<br>
+  Contact : <a href="mailto:aurel.lashermes@eaurmc.fr">aurel.lashermes@eaurmc.fr</a>
+
+just_the_docs:
+  custom_css:
+    - assets/css/custom.css
+
