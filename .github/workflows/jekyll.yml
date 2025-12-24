@@ -1,5 +1,5 @@
 name: Build and deploy Jekyll site
-run: bundle exec jekyll build --baseurl "/Le-VOCAL"
+
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
           bundler-cache: true
 
       - name: Build site
-        run: bundle exec jekyll build
+        run: bundle exec jekyll build --baseurl "/Le-VOCAL"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
