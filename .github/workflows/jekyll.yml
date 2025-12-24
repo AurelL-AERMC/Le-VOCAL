@@ -28,7 +28,7 @@ jobs:
           bundler-cache: true
 
       - name: Build site
-        run: bundle exec jekyll build --baseurl "/Le-VOCAL"
+        run: bundle exec jekyll build --source docs --destination _site --baseurl "/Le-VOCAL"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

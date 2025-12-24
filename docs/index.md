@@ -11,9 +11,9 @@ Bienvenue sur la documentation du plugin **VOCAL**
 (Valorisateur des Ouvrages Connus À L’Agence).
 
 ## Accès rapide
-- [Présentation du projet](docs/presentation)
-- [Documentation utilisateur](docs/documentation)
-- [Exercices de prise en main](docs/exercices)
+- [Présentation du projet](/presentation)
+- [Documentation utilisateur](/documentation)
+- [Exercices de prise en main](/exercices)
 
 ---
 
