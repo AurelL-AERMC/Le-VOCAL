@@ -1,4 +1,11 @@
-# Exercices de prise en main
+---
+layout: default
+title: Exercices
+nav_order: 4
+---
+
+# Exercices
+
 
 Les exercices suivants sont conçus pour une formation ou une prise en main autonome.
 

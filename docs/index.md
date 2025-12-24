@@ -1,4 +1,10 @@
-# Documentation VOCAL
+---
+layout: default
+title: Accueil
+nav_order: 1
+---
+
+# Documentation VOCAL# Documentation VOCAL
 
 Bienvenue sur la documentation du plugin **VOCAL**  
 (Valorisateur des Ouvrages Connus À L’Agence).

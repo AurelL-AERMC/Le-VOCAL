@@ -1,4 +1,11 @@
+---
+layout: default
+title: Documentation
+nav_order: 3
+---
+
 # Documentation utilisateur
+
 
 Cette section décrit **pas à pas** l’utilisation du plugin VOCAL.
 
