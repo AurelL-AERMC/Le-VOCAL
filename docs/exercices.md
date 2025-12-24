@@ -1,7 +1,8 @@
 ---
-title: Installation
+layout: default
+title: Exercices
 parent: Accueil
-nav_order: 2
+nav_order: 3
 ---
 
 # Exercices

@@ -1,7 +1,8 @@
 ---
-title: Installation
+layout: default
+title: Documentation
 parent: Accueil
-nav_order: 3
+nav_order: 2
 ---
 
 
