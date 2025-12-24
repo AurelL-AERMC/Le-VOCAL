@@ -1,9 +1,8 @@
 ---
-title: Installation
+title: Présentation
 parent: Accueil
-nav_order: 2
+nav_order: 1
 ---
-
 
 # Présentation du projet
 
