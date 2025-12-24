@@ -1,8 +1,9 @@
 ---
 layout: default
 title: Exercices
-nav_order: 4
 ---
+{% include nav.md %}
+
 
 # Exercices
 

@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Présentation
-nav_order: 2
 ---
+
+{% include nav.md %}
+
 
 # Présentation du projet
 

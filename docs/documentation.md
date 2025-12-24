@@ -1,8 +1,9 @@
 ---
 layout: default
 title: Documentation
-nav_order: 3
 ---
+{% include nav.md %}
+
 
 # Documentation utilisateur
 
