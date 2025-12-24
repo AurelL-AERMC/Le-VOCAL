@@ -1,13 +1,13 @@
 ---
 layout: default
-title: "Formation : je n'ai jamais lancé QGIS"
+title: "Formation : j'ai déjà lancé QGIS"
 parent: "Formation"
-nav_order: 1
+nav_order: 2
 has_children: true
 ---
 
 
-# Formation à VOCAL : 0 QGIS
+# Formation à VOCAL : Bases de QGIS 
 
 
 Cette section décrit **pas à pas** une utilisation basique de VOCAL de l'installation à l'analyse. Elle se veut la plus descriptive possible.
