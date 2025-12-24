@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Formation : j'ai déjà lancé QGIS"
-parent: Formation
+parent: "Formation"
 nav_order: 2
 has_children: true
 ---

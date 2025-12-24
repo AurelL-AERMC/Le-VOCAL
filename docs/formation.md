@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Formation
+title: "Formation"
 parent: Accueil
 nav_order: 3
 has_children: true

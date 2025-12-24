@@ -16,4 +16,4 @@ Cette section décrit **pas à pas** une utilisation basique de VOCAL de l'insta
 - Des données Agence de l'eau et/ou DDTM (sous convention)
 - Un peu de temps et de motivation
 
-Si ca marche : **SUPER !!** Le plus dur semble derrière nous désormais. Passons au chargement des données ! Pour cela, vous pouvez cliquer ici: [La suite : Charger des données](formation_deb/chargement_couches_deb)
+Si ca marche : **SUPER !!** Le plus dur semble derrière nous désormais. Passons au chargement des données ! Pour cela, vous pouvez cliquer ici: [La suite : Charger des données](chargement_couches_deb)
