@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Présentation
+title: Présentation du Projet et du Plugin VOCAL
 parent: Accueil
 nav_order: 1
 ---

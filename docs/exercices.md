@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Exercices
+title: Exercices pour aller plus loin
 parent: Accueil
 nav_order: 4
 ---

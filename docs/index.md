@@ -14,7 +14,8 @@ Bienvenue sur la documentation du plugin **VOCAL**
 ## Accès rapide
 - [Présentation du projet](presentation)
 - [Documentation utilisateur](documentation)
-- [Exercices de prise en main](exercices)
+- [Formation à VOCAL](formation)
+- [Exercices pour aller plus loin](exercices)
 
 ---
 
