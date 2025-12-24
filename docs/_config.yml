@@ -2,6 +2,7 @@ title: VOCAL
 description: Documentation et supports de formation du plugin QGIS VOCAL
 
 url: https://aurell-aermc.github.io
+baseurl: /Le-VOCAL
 
 
 theme: just-the-docs
