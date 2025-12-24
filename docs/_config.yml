@@ -19,10 +19,10 @@ logo: "/Le-VOCAL/assets/images/logo-vocal.png"
 
 
 footer_content: >
-  <strong>Aurel Lashermes</strong> – Délégation de Montpellier de l’Agence de l’eau RMC<br>
+  Auteur : <strong>Aurel Lashermes</strong> – Délégation de Montpellier de l’Agence de l’eau RMC<br>
   Contact : <a href="mailto:aurel.lashermes@eaurmc.fr">aurel.lashermes@eaurmc.fr</a>
 
 just_the_docs:
   custom_css:
-    - assets/css/custom.css
+    - /Le-VOCAL/assets/css/custom.css
 
