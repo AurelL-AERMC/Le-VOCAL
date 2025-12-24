@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Analyser les sorties"
-parent: "Formation : j'ai déjà lancé QGIS"
+parent: "Formation : je n'ai jamais lancé QGIS"
 nav_order: 4
 ---
 

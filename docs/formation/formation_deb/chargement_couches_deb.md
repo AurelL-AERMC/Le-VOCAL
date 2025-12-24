@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Charger des données"
-parent: "Formation : j'ai déjà lancé QGIS"
+parent: "Formation : je n'ai jamais lancé QGIS"
 nav_order: 2
 ---
 
