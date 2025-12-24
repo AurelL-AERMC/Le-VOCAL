@@ -3,8 +3,6 @@ title: Accueil
 nav_order: 1
 ---
 
-{% include nav.md %}
-
 
 # Documentation VOCAL
 
