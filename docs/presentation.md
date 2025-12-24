@@ -1,4 +1,5 @@
 ---
+layout: default
 title: Présentation
 parent: Accueil
 nav_order: 1
