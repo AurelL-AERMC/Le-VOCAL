@@ -19,3 +19,7 @@ footer_content: "Documentation du plugin QGIS VOCAL – AERMc"
 # Back to top
 back_to_top: true
 back_to_top_text: "Retour en haut"
+
+color_scheme: light
+
+nav_external_links_new_tab: false
