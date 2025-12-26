@@ -32,7 +32,7 @@ Pour installer le plugin, commencez par lancer **QGIS**.
 1. Une fois QGIS ouvert, cliquer sur le menu :  
    **Extensions → Installer/Gérer les extensions**
 
-![Onglet Installer depuis un ZIP]({{ "/docs/images/screen_installation.png" | relative_url }})
+![Onglet Installer depuis un ZIP]({{ "/assets/images/formation/screen_installation.png" | relative_url }})
 *Figure 1 — Onglet « Installer depuis un ZIP » dans QGIS*
 
 
