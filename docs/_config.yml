@@ -15,7 +15,7 @@ back_to_top_text: "Retour en haut"
 
 color_scheme: light
 
-logo: "/Le-VOCAL/assets/images/logo-vocal.png"
+logo: "/assets/images/logo-vocal.png"
 
 
 footer_content: >
@@ -24,5 +24,5 @@ footer_content: >
 
 just_the_docs:
   custom_css:
-    - /Le-VOCAL/assets/css/custom.css
+    - /assets/css/custom.css
 
