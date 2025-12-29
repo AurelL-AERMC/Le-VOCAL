@@ -167,7 +167,7 @@ Ici, vous allez être en autonomie pour essayer de charger le deuxième programm
 La démarche à suivre va être exactement la même que pour le programme 1, avec simplement l'ajout d'une couche de sous-zonage. 
 Bonne chance !  
 L'objectif est d'avoir quelque chose du type : 
-![Exercice 3.4]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
+![Exercice]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
 *Figure X — Objectif de l'exercice*
 
 <details>
@@ -181,13 +181,13 @@ Vous devez charger un sous-zonage dans le premier menu de VOCAL !
 
 Voici les champs a remplir pour obtenir une carte de l'évolution des volumes prélevés agrégés par zone : 
 
-![Exercice 3.4 : solution 1]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_un.png" | relative_url }})
+![Exercice solution partie 1]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_un.png" | relative_url }})
 *Figure X — Solution premier menu*
 
-![Exercice 3.4 : solution 2]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_deux.png" | relative_url }})
+![Exercice solution partie 2]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_deux.png" | relative_url }})
 *Figure X — Solution deuxième menu*
 
-![Exercice 3.4 : solution 3]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
+![Exercice solution partie 3]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
 *Figure X — Solution : résultats*
 </details>
 
