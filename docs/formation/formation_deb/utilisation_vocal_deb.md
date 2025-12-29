@@ -5,13 +5,172 @@ parent: "Formation : je n'ai jamais lancé QGIS"
 nav_order: 3
 ---
 
+# 3. Utiliser VOCAL
 
-# Formation à VOCAL : Utiliser VOCAL
+Cette section décrit comment utiliser les différents outils de VOCAL.
 
+---
 
-Cette section décrit **pas à pas** une utilisation basique de VOCAL de l'installation à l'analyse. Elle se veut la plus descriptive possible.
+## 3.1 Choisir un programme
 
-## Pré-requis :
-- Un poste avec QGIS (version 3.3+) d'installé
-- Des données Agence de l'eau et/ou DDTM (sous convention)
-- Un peu de temps et de motivation
+Le plugin VOCAL propose pour le moment **5 programmes de calcul** :
+
+- l’évolution des volumes prélevés (par ouvrage),
+- l’évolution des volumes prélevés (par zone),
+- le ratio entre le volume prélevé et le volume autorisé (par ouvrage),
+- le ratio entre le volume prélevé et le volume autorisé (par zone),
+- une caractérisation de la connaissance des ouvrages de l’Agence.
+
+Une fois VOCAL lancé, sur le premier menu qui s’affiche, la question du **choix du programme** est la première qui nous est posée.  
+Choisissez alors le programme souhaité dans la liste déroulante.
+
+![Choix du programme dans VOCAL]({{ "/assets/images/formation/screen_utilisation_choix_programme.png" | relative_url }})
+
+*Figure X — Choix du programme dans VOCAL*
+
+👉 Pour cette formation, il est conseillé de choisir le **premier programme proposé** :  
+**Évolution des volumes prélevés par ouvrage**.
+
+---
+
+## 3.2 Choisir une zone d’étude
+
+Choisir une zone d’étude est nécessaire au bon fonctionnement de VOCAL.  
+On distingue cependant **deux types de zonages** :
+
+1. **La zone d’étude** : zone totale sur laquelle porte l’analyse.
+2. **Les zones de travail** : sous-zonage utilisé pour les programmes nécessitant une agrégation spatiale.
+
+Ces deux types de zonages se chargent différemment.
+
+---
+
+### 3.2.1 Charger une zone d’étude
+
+Pour charger une zone d’étude, la méthode est similaire au choix du programme.  
+Deux listes déroulantes sont disponibles :
+
+- une pour choisir **l’échelle** de la zone,
+- une seconde pour sélectionner **l’élément correspondant**.
+
+**Exemple** :  
+- Échelle : *Départements*  
+- Élément : *GARD*
+
+Une fois ces choix effectués, cliquer sur **Charger zone et zoom**.
+
+![Chargement de la zone d’étude dans VOCAL]({{ "/assets/images/formation/screen_utilisation_choix_zone.png" | relative_url }})
+
+*Figure X — Chargement de la zone d’étude dans VOCAL*
+
+---
+
+### 3.2.2 Charger des sous-zonages
+
+Pour charger un sous-zonage, il faut activer l’option correspondante en cochant la case :
+
+> **« Voulez-vous charger un sous-zonage ? »**
+
+comme indiqué sur la capture ci-dessous :
+
+![Chargement d’un sous-zonage dans VOCAL]({{ "/assets/images/formation/screen_utilisation_choix_sous_zonage.png" | relative_url }})
+
+*Figure X — Chargement d’un sous-zonage dans VOCAL*
+
+Une fois la case cochée, un menu supplémentaire apparaît :
+
+- le premier menu déroulant permet de choisir un **niveau d’échelle** (communes, bassins versants, etc.) ;
+- tous les éléments de ce niveau intersectant la zone d’étude seront chargés ;
+- il est également possible de sélectionner :
+  - une couche polygone déjà présente dans le projet QGIS,
+  - ou un fichier externe via l’explorateur de fichiers.
+
+Une fois le sous-zonage choisi, cliquer sur **Suivant** (en bas à droite du menu).
+
+---
+
+**Exemple** :  
+Si l’on souhaite charger le **département de l’Hérault** comme zone d’étude et ses **bassins versants** comme sous-zonage, l’interface doit ressembler à ceci :
+
+![Exemple de chargement de zone dans VOCAL]({{ "/assets/images/formation/screen_utilisation_exemple_choix_zone.png" | relative_url }})
+
+*Figure X — Exemple de chargement de zone dans VOCAL*
+
+Puis cliquer sur **Suivant**.
+
+---
+
+## 3.3 Compléter les champs du programme 1 :  
+### Évolution des volumes prélevés par ouvrage
+
+Une fois les zones choisies :
+
+1. Lancer VOCAL.
+2. Sélectionner le programme **Évolution des volumes prélevés par ouvrage**.
+3. Charger une zone d’étude.
+4. Cliquer sur **Suivant**.
+
+Une seconde page s’ouvre : cliquer sur **Ouvrir l’outil processing**.
+
+![Lancement des programmes VOCAL]({{ "/assets/images/formation/screen_utilisation_outil_processing.png" | relative_url }})
+
+*Figure X — Lancement des programmes VOCAL*
+
+Le programme se lance alors.  
+Si ce n’est pas le cas, revenir à l’étape **1. Installation de VOCAL** afin de vérifier que l’installation est complète.
+
+Un nouveau menu Processing s’ouvre :
+
+![Lancement du premier programme VOCAL]({{ "/assets/images/formation/screen_utilisation_premier_programme.png" | relative_url }})
+
+*Figure X — Lancement du premier programme VOCAL*
+
+---
+
+### Remplissage des champs
+
+Compléter les champs étape par étape :
+
+**Indication de la zone d’étude**
+1. Sélectionner, parmi les couches du projet, la couche correspondant à la zone d’étude  
+   *(exemple : `departements_INTER_HERAULT [EPSG:2154]`)*.
+
+**Indication de la base de données et des champs**
+2. Sélectionner la base de données de l’Agence.
+3. Sélectionner le champ correspondant à l’**année de campagne de redevance**.
+4. Sélectionner le champ correspondant à l’**identifiant de l’ouvrage**.
+5. Sélectionner le champ correspondant au **nom de l’ouvrage**.
+6. Sélectionner le champ correspondant au **nom de l’interlocuteur**.
+7. Sélectionner le champ correspondant au **volume retenu** (assiette).
+8. Choisir la méthode de calcul de l’évolution  
+   *(Theil-Sen est généralement plus robuste)*.
+9. Indiquer le **nombre minimum d’années** nécessaires au calcul de la pente  
+   *(minimum conseillé : 4, voire 5 ou 6 pour une étude de type PGRE)*.
+10. Indiquer les **années de début et de fin** de l’étude temporelle.
+
+Les autres options sont plus techniques et seront abordées dans la section **3.6** de ce guide.
+
+Le menu complété doit ressembler à ceci :
+
+![Exemple remplissage premier programme VOCAL]({{ "/assets/images/formation/screen_utilisation_premier_programme_rempli.png" | relative_url }})
+
+*Figure X — Exemple de remplissage du premier programme VOCAL*
+
+Il est alors possible de cliquer sur **Exécuter**.
+
+---
+
+## 3.4 Exercice  
+### Compléter les champs du programme 2 :  
+**Évolution des volumes prélevés agrégés par zone**
+
+*(Exercice guidé à réaliser par les participants.)*
+
+---
+
+## 3.5 Compléter les champs du programme 3  
+### Ratio Volumes prélevés / Volumes autorisés par ouvrage
+
+---
+
+## 3.6 Fonctionnalités optionnelles

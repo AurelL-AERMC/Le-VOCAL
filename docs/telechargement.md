@@ -25,6 +25,7 @@ Vous pouvez télécharger en cliquant ici : [ Télécharger le plugin VOCAL](htt
 5. Sélectionner le fichier téléchargé
 6. Redémarrer QGIS si demandé
 
+Pour une explication de la démarche plus détaillée, veuillez vous rendre dans l'onglet **Formation** de ce site.
 ---
 
 ## À propos des versions

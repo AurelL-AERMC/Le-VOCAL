@@ -47,7 +47,9 @@ Un nouvel icône **VOCAL** a désormais été ajouté à l’interface de QGIS.
 
 5. Cliquer sur cet icône.
 
-   *(Image / capture d’écran de l’icône et du menu qui s’ouvre)*
+![Premier lancement de VOCAL pour finaliser l'installation]({{ "/assets/images/formation/screen_installation_premier_lancement.png" | relative_url }})
+*Figure 2 — Premier lancement de VOCAL pour finaliser l'installation*
+   
 
 6. Sélectionner une **zone d’étude** (peu importe laquelle pour cette étape).  
    Charger la zone d’étude puis cliquer sur **Valider**.
@@ -60,9 +62,17 @@ Le plugin **VOCAL** est désormais correctement installé sur votre ordinateur.
 ---
 
 Nous pouvons maintenant passer à l’étape suivante : le chargement des données.  
-👉 [La suite : Charger des données](chargement_couches_deb)
+[La suite : Charger des données](chargement_couches_deb)
 
 ---
+
+## Si la manipulation n'a pas fonctionné
+
+Si cela n'a pas fonctionné. 
+1. Veuillez ressayer de lancer VOCAL, charger une zone, lancer un programme, redemarrer QGIS. 
+2. Vérifier que le Plugin de base de QGIS nommé Processing (icone engrenage gris) soit bien activé. Extention -> Gérer les extensions -> Extensions Installées -> Activer Processing.
+
+
 
 ## Récapitulatif rapide
 
