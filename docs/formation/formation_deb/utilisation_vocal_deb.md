@@ -171,24 +171,28 @@ L'objectif est d'avoir quelque chose du type :
 *Figure X — Objectif de l'exercice*
 
 <details>
-<summary>Indice</summary>
-
-Vous devez charger un sous-zonage dans le premier menu de VOCAL ! 
-</details>
-
-<details>
 <summary>Solution</summary>
 
-Voici les champs a remplir pour obtenir une carte de l'évolution des volumes prélevés agrégés par zone : 
+<p>Voici les champs à remplir pour obtenir une carte de l'évolution des volumes prélevés agrégés par zone :</p>
 
-![Exercice solution partie 1]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_un.png" | relative_url }})
-*Figure X — Solution premier menu*
+<img src="{{ '/assets/images/formation/screen_utilisation_premier_exercice_solution_un.png' | relative_url }}"
+     alt="Solution premier menu"
+     width="700">
 
-![Exercice solution partie 2]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_deux.png" | relative_url }})
-*Figure X — Solution deuxième menu*
+<p><em>Figure X — Solution premier menu</em></p>
 
-![Exercice solution partie 3]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
-*Figure X — Solution : résultats*
+<img src="{{ '/assets/images/formation/screen_utilisation_premier_exercice_solution_deux.png' | relative_url }}"
+     alt="Solution deuxième menu"
+     width="700">
+
+<p><em>Figure X — Solution deuxième menu</em></p>
+
+<img src="{{ '/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png' | relative_url }}"
+     alt="Solution résultats"
+     width="700">
+
+<p><em>Figure X — Solution : résultats</em></p>
+
 </details>
 
 
