@@ -139,9 +139,9 @@ Compléter les champs étape par étape :
 2. Sélectionner la base de données de l’Agence.
 3. Sélectionner le champ correspondant à l’**année de campagne de redevance**.
 4. Sélectionner le champ correspondant à l’**identifiant de l’ouvrage**.
-5. Sélectionner le champ correspondant au **nom de l’ouvrage**.
-6. Sélectionner le champ correspondant au **nom de l’interlocuteur**.
-7. Sélectionner le champ correspondant au **volume retenu** (assiette).
+5. Sélectionner le champ correspondant au **nom de l’ouvrage**. (optionnel)
+6. Sélectionner le champ correspondant au **nom de l’interlocuteur**. (optionnel)
+7. Sélectionner le champ correspondant au **volume retenu** (l'assiette).
 8. Choisir la méthode de calcul de l’évolution  
    *(Theil-Sen est généralement plus robuste)*.
 9. Indiquer le **nombre minimum d’années** nécessaires au calcul de la pente  
@@ -200,6 +200,50 @@ L'objectif est d'avoir quelque chose du type :
 
 ## 3.5 Compléter les champs du programme 3  
 ### Ratio Volumes prélevés / Volumes autorisés par ouvrage
+Même démarche que pour charger le premier programme,on va cependant rajouter une deuxième base, une base DDTM pour ajouter des volumes autorisés. On suit les mêmes premières étapes après avoir choisi une zone : 
+
+1. Lancer VOCAL.
+2. Sélectionner le programme **Ratio Volumes prélevés / Volumes autorisés par ouvrage**.
+3. Charger une zone d’étude.
+4. Cliquer sur **Suivant**.
+5. Cliquer sur **Ouvrir l’outil processing**.
+
+Le programme se lance. 
+Compléter les champs étape par étape :
+
+**Indication de la zone d’étude**
+1. Sélectionner, parmi les couches du projet, la couche correspondant à la zone d’étude  
+   *(exemple : `departements_INTER_HERAULT [EPSG:2154]`)*.
+
+**Indication de la base de données et des champs côté Agence**
+2. Sélectionner la base de données de l’Agence.
+3. Sélectionner le champ correspondant à l’**année de campagne de redevance**.
+4. Sélectionner le champ correspondant à l’**identifiant de l’ouvrage**.
+5. Sélectionner le champ correspondant au **volume retenu** (l'assiette).
+6. Sélectionner le champ correspondant au **Type de milieu**. (optionnel)
+7. Sélectionner le champ correspondant au **nom de l’ouvrage**.(optionnel)
+8. Sélectionner le champ correspondant au **nom de l’interlocuteur**.(optionnel)
+
+**Indication de la base de données et des champs côté DDTM**
+9. Sélectionner la base de données de la DDTM.
+10. Sélectionner le champ correspondant à l’**ID de l'ouvrage Agence**.
+11. Sélectionner le champ correspondant au **volume autorisé par la DDTM**.
+12. Sélectionner le champ correspondant à l'**ID de l'ouvrage de la DDTM**.
+
+**Indication de l'année de référence**
+12. Indiquer l'année sur laquelle vous voulez que les assiettes agence soient prise en compte.
+
+Les autres options sont plus techniques et seront abordées dans la section **3.6** de ce guide.
+
+Le menu complété doit ressembler à ceci :
+
+![Exemple remplissage premier programme VOCAL]({{ "/assets/images/formation/screen_utilisation_premier_programme_rempli.png" | relative_url }})
+
+*Figure X — Exemple de remplissage du troisième programme VOCAL*
+
+Il est alors possible de cliquer sur **Exécuter**.
+
+---
 
 ---
 
