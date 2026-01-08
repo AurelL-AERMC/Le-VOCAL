@@ -170,6 +170,13 @@ L'objectif est d'avoir quelque chose du type :
 ![Exercice]({{ "/assets/images/formation/screen_utilisation_premier_exercice_solution_trois.png" | relative_url }})
 *Figure X — Objectif de l'exercice*
 
+<details> 
+<summary>Indice</summary>
+Vous devez charger un sous-zonage dans le premier menu de VOCAL ! 
+
+</details>
+
+
 <details>
 <summary>Solution</summary>
 
