@@ -19,6 +19,7 @@ L’objectif de cette partie est de donner des **clés de lecture** permettant :
 
 
 Les données d'entrées ne sont pas fiables a 100%, l'appariement n'est également que partiel. Il est important alors de prendre les résultats de VOCAL comme une porte d'entrée pour identifier des zones/cas necessitant une analyse plus poussée.
+
 ---
 
 ## 4.0 - Visualiser les résultats 
@@ -39,63 +40,39 @@ Pour ouvrir la table attributaire :
 *Figure X — Ouverture de la table attributaire d’une couche résultat VOCAL*
 
 La table attributaire permet de :
-- visualiser l’ensemble des indicateurs calculés,
-- trier les valeurs (par exemple par pente ou par ratio),
-- effectuer des sélections sur critères simples.
-
-Dans le cas du programme 1, on retrouve notamment :
-- les identifiants d’ouvrages,
-- les indicateurs d’évolution (pente, CAGR, normalisations),
-- le nombre d’années utilisées pour le calcul.
+- visualiser l’ensemble des indicateurs calculés
+- trier les valeurs (par exemple par pente ou par ratio) comme avec un tableur
+- effectuer des sélections
 
 ---
 
 ### Visualiser les résultats via la sélection d’un élément
 
-Il est souvent plus lisible d’examiner les résultats **ouvrage par ouvrage** ou **zone par zone**.
-
-Deux méthodes principales sont possibles.
-
-#### Sélection depuis la carte
+Il est parfois plus lisible d’examiner les résultats **ouvrage par ouvrage** ou **zone par zone**.
 
 1. Activer l’outil **Sélectionner des entités** dans la barre d’outils QGIS.
-2. Cliquer directement sur un ouvrage ou une zone dans la carte.
+2. Vérifier que la couche de l'éléments que l'on veut inspecter est bien selectionnée.
+3. Cliquer directement sur un ouvrage ou une zone dans la carte.
 
 ![Sélection d’un élément sur la carte]({{ "/assets/images/formation/screen_visualisation_selection_carte.png" | relative_url }})
 
 *Figure X — Sélection d’un ouvrage ou d’une zone depuis la carte*
 
 Une fois l’entité sélectionnée :
-- elle apparaît surlignée sur la carte,
-- la ligne correspondante est mise en évidence dans la table attributaire.
-
-#### Sélection depuis la table attributaire
-
-Il est également possible de sélectionner un élément directement depuis la table :
-1. Cliquer sur une ligne de la table attributaire.
-2. L’élément correspondant est automatiquement sélectionné sur la carte.
-
-![Sélection depuis la table attributaire]({{ "/assets/images/formation/screen_visualisation_selection_table.png" | relative_url }})
-
-*Figure X — Sélection d’un élément depuis la table attributaire*
-
-Cette méthode est particulièrement utile pour :
-- analyser des valeurs extrêmes,
-- vérifier des résultats atypiques,
-- faire le lien entre un indicateur chiffré et sa localisation spatiale.
+- elle apparaît surlignée en rouge sur la carte
+- les informations de l'ouvrage s'affiche sur la droite de l'écran.
 
 ---
 
-### 4.0.3 Exporter les résultats sous forme de tableaux (Excel)
+### Exporter les résultats sous forme de tableaux
 
 Les résultats produits par VOCAL peuvent être exportés afin d’être utilisés :
-- dans un tableur (Excel, LibreOffice),
-- dans un rapport,
-- ou pour des analyses complémentaires.
+- dans un tableur (Excel, LibreOffice)
+- dans un rapport
+- pour des analyses complémentaires
 
-#### Exporter une couche vers un fichier Excel
-
-1. Faire un **clic droit** sur la couche résultat.
+Pour cela :
+1. Faire un **clic droit** sur la couche que l'on veut exporter.
 2. Cliquer sur **Exporter** → **Sauvegarder les entités sous…**.
 
 ![Menu export des entités]({{ "/assets/images/formation/screen_export_menu.png" | relative_url }})
@@ -103,28 +80,16 @@ Les résultats produits par VOCAL peuvent être exportés afin d’être utilis�
 *Figure X — Menu d’export des entités dans QGIS*
 
 Dans la fenêtre d’export :
-1. Choisir le **format** : *Microsoft Excel (*.xlsx)*.
-2. Définir le **chemin et le nom du fichier de sortie*.
-3. Cocher **Exporter uniquement les entités sélectionnées** si nécessaire.
+1. Choisir le **format**. Par exemple : *Microsoft Excel (*.xlsx)*.
+2. Définir le **chemin et le nom du fichier de sortie**.
+3. Cocher **Exporter uniquement les entités sélectionnées** si nécessaire. Vous pouvez en effet utiliser des sélections pour exporter uniquement un sous-ensemble des résultats.
 4. Cliquer sur **OK**.
 
-![Paramètres d’export Excel]({{ "/assets/images/formation/screen_export_excel_parametres.png" | relative_url }})
-
-*Figure X — Paramétrage de l’export des résultats vers Excel*
 
 Le fichier généré contient l’ensemble des champs attributaires, y compris :
-- les indicateurs calculés par VOCAL,
-- les identifiants d’ouvrages ou de zones,
-- les éventuels champs descriptifs.
-
----
-
-### Bonnes pratiques pour l’export
-
-- Toujours vérifier que la couche exportée correspond bien au résultat final souhaité.
-- Utiliser les sélections pour exporter uniquement un sous-ensemble pertinent.
-- Conserver les identifiants d’ouvrages ou de zones afin de faciliter les croisements ultérieurs.
-- Documenter le contexte de production des résultats (année, paramètres, méthode).
+- les indicateurs calculés par VOCAL
+- les identifiants d’ouvrages ou de zones
+- les éventuels champs descriptifs
 
 ---
 
@@ -176,26 +141,22 @@ Les volumes sont agrégés par zone (communes, bassins versants, polygones perso
 
 ### Différences avec l’analyse par ouvrage
 
-- Les volumes sont **agrégés spatialement** avant l’analyse temporelle.
-- La dynamique observée reflète une **tendance collective**, et non le comportement individuel des ouvrages.
-- Une évolution marquée peut être due :
-  - à quelques ouvrages dominants,
-  - ou à une évolution diffuse sur l’ensemble du territoire.
+Les volumes ici sont **agrégés spatialement** avant l’analyse temporelle. La dynamique observée reflète donc une **tendance collective** et non le comportement individuel des ouvrages.
+L'évolution peut donc être due à :
+  - une évolution de quelques ouvrages dominants
+  - une évolution diffuse sur l’ensemble du territoire
+  - l'ajout de nouveaux ouvrages sur la zone pendant la période donnée (Attention à ça!)
+et le plus souvent, une combinaison des trois.
 
 ### Clés de lecture
 
-- Une pente positive à l’échelle d’une zone peut masquer des situations contrastées entre ouvrages.
-- À l’inverse, une stabilité globale peut dissimuler des évolutions fortes localisées.
-- Ce type d’analyse est particulièrement pertinent pour :
-  - des diagnostics territoriaux,
-  - des études de type PGRE,
-  - l’identification de zones à enjeux.
+Attention tout de même, une pente positive à l’échelle d’une zone peut masquer des situations contrastées entre ouvrages et à l’inverse, une stabilité globale peut dissimuler des évolutions fortes localisées.
+Ce type d’analyse est particulièrement pertinent pour :
+  - faire des diagnostics territoriaux
+  - un regard global pour une bilan type PGRE
+  - l’identification de zones à enjeux
 
-### Bonnes pratiques
-
-- Croiser systématiquement les résultats avec une analyse par ouvrage.
-- Vérifier la cohérence des résultats avec les sous-zonages utilisés.
-- Être attentif aux effets de seuil et aux changements de périmètre.
+Je conseil de toujorus croiser ces résultats avec une analyse par ouvrage et d'être très attentif aux ajouts d'ouvrages sur la période. On peut filtrer cela en obligeant tout les ouvrages à avoir un nombre d'années de redevance égale au nombre d'année de l'étude choisi ; C'est à dire, renseigner 6 ans dans le nombre d'années minimale pour que l'ouvrage soit pris en compte si on veut mesurer l'évolution entre 2018 et 2023.
 
 ---
 
