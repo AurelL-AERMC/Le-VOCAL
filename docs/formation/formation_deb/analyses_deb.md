@@ -171,9 +171,9 @@ Le ratio est défini comme :
 > **Ratio = Volume prélevé (VP) / Volume autorisé (VA)**
 
 Il permet d’identifier :
-- des situations de dépassement potentiel,
-- des ouvrages proches de leur limite réglementaire,
-- des incohérences ou des données manquantes.
+- des situations de dépassement potentiel
+- des ouvrages proches de leur limite réglementaire de volume autorisé
+- des incohérences ou des données manquantes
 
 ### Indicateurs produits
 
@@ -185,32 +185,26 @@ Il permet d’identifier :
 
 ### Points de vigilance
 
-- Un ratio supérieur à 1 ne signifie pas automatiquement une infraction :
-  - erreurs de saisie possibles,
-  - décalages temporels entre autorisations et prélèvements,
-  - pluralité d’arrêtés ou de régimes juridiques.
-- Les ouvrages non appariés doivent être interprétés avec prudence.
-- Les résultats doivent être croisés avec :
-  - l’historique administratif,
-  - les échanges avec les services instructeurs.
+Un ratio supérieur à 1 ne signifie pas automatiquement une infraction. Par exemple, sur un champ captant les autorisations peuvent répartir a part égales les volumes entre tous les forages alors que dans la réalité les usages ne peuvent pas refleter cette répartition.
+
+Les ouvrages non appariés ne doivent pas être oubliés.
+
 
 ---
 
-## 4.4 Programme 4 — Ratio Volumes prélevés / Volumes autorisés par zone
+## 4.4 Programme 4 — Ratio Volumes prélevés / Volumes autorisés par zone*
 
-Ce programme applique le principe du ratio VP / VA à une **échelle agrégée**.  
-Il vise à identifier des **déséquilibres structurels** sur un territoire donné.
+Ce programme applique les mêmes principes que le programme 3, mais à une **échelle territoriale**.  
+Les volumes sont agrégés par zone (communes, bassins versants, polygones personnalisés) avant calcul du ratio.
 
-### Intérêt principal
+Cet indicateur a très peu de réalité territorial mais permet tout de même de mettre en evidence des des territoires où les volumes prélevés sont globalement proches ou supérieurs aux volumes autorisés.
 
-- Mettre en évidence des territoires où les volumes prélevés sont globalement proches ou supérieurs aux volumes autorisés.
-- Fournir un indicateur synthétique à l’échelle d’un bassin versant ou d’un zonage de gestion.
 
-### Limites d’interprétation
+### Points de vigilance
 
-- L’agrégation peut masquer des situations individuelles très contrastées.
-- Les volumes autorisés agrégés ne reflètent pas toujours la réalité réglementaire fine.
-- Ce programme doit être utilisé comme **outil de diagnostic global**, non comme outil de contrôle individuel.
+Comme dit précédement dans le 4.2, l’agrégation peut masquer des situations individuelles très contrastées. Il ne faut pas non plus oublié les ajouts d'ouvrages durant la période selectionnée; 
+De plus, les canaux ne sont pas comptabilisé de la meme manièr entre les DDTM et l'Agence : l'ensemble du volume prélevé est compté par l'Agence, la DDTM aura elle soit un débit soit le volume non restitué au cours d'eau.
+
 
 ---
 
