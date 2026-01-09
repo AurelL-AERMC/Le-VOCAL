@@ -14,7 +14,7 @@ Cette section décrit comment télécharger et installer le plugin **VOCAL** sur
 
 ## 1.1 Télécharger VOCAL
 
-Le plugin **VOCAL** est disponible en libre accès *open source* sur la plateforme GitHub, à l’adresse suivante : https://github.com/AurelL-AERMC/Le-VOCAL et donc accéder au plugin directement depuis ce répertoire GitHub.
+Le plugin **VOCAL** est disponible en libre accès *open source* sur la plateforme GitHub, à l’adresse suivante : [https://github.com/AurelL-AERMC/Le-VOCAL](https://github.com/AurelL-AERMC/Le-VOCAL) et donc accéder au plugin directement depuis ce répertoire GitHub.
 
 Cependant, vous pouvez aussi télécharger directement le plugin via le lien suivant : [Télécharger le plugin VOCAL (ZIP)](https://github.com/AurelL-AERMC/Le-VOCAL/archive/refs/heads/main.zip)
 
