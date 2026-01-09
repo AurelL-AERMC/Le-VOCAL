@@ -6,7 +6,7 @@ nav_order: 2
 ---
 
 
-# Formation à VOCAL : Charger des données
+# 2. Charger des données
 
 
 Cette section décrit **pas à pas** une utilisation basique de VOCAL de l'installation à l'analyse. Elle se veut la plus descriptive possible.

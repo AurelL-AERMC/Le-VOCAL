@@ -14,13 +14,12 @@ Cette section décrit comment télécharger et installer le plugin **VOCAL** sur
 
 ## 1.1 Télécharger VOCAL
 
-Le plugin **VOCAL** est disponible en libre accès *open source* sur la plateforme GitHub, à l’adresse suivante : https://github.com/AurelL-AERMC/Le-VOCAL
+Le plugin **VOCAL** est disponible en libre accès *open source* sur la plateforme GitHub, à l’adresse suivante : https://github.com/AurelL-AERMC/Le-VOCAL et donc accéder au plugin directement depuis ce répertoire GitHub.
 
-Vous pouvez télécharger directement le plugin via le lien suivant : [Télécharger le plugin VOCAL (ZIP – branche main)](https://github.com/AurelL-AERMC/Le-VOCAL/archive/refs/heads/main.zip)
+Cependant, vous pouvez aussi télécharger directement le plugin via le lien suivant : [Télécharger le plugin VOCAL (ZIP)](https://github.com/AurelL-AERMC/Le-VOCAL/archive/refs/heads/main.zip)
 
-Vous pouvez également accéder au plugin directement depuis le répertoire GitHub de VOCAL.
 
-Vous devez désormais être en possession d’un fichier compressé **ZIP** contenant le plugin.  
+Une fois le téléchargement fini, vous devez désormais être en possession d’un fichier compressé **ZIP** contenant le plugin.  
 Placez ce fichier à l’emplacement de votre choix sur votre ordinateur.
 
 ---
@@ -57,9 +56,8 @@ Un nouvel icône **VOCAL** a désormais été ajouté à l’interface de QGIS.
 7. Une fenêtre s’ouvre vous demandant de **redémarrer QGIS**.  
    Redémarrer QGIS.
 
-Le plugin **VOCAL** est désormais correctement installé sur votre ordinateur.
+Le plugin **VOCAL** est désormais installé sur votre ordinateur.
 
----
 
 Nous pouvons maintenant passer à l’étape suivante : le chargement des données.  
 [La suite : Charger des données](chargement_couches_deb)
@@ -68,11 +66,11 @@ Nous pouvons maintenant passer à l’étape suivante : le chargement des donné
 
 ## Si la manipulation n'a pas fonctionné
 
-Si cela n'a pas fonctionné. 
+
 1. Veuillez ressayer de lancer VOCAL, charger une zone, lancer un programme, redemarrer QGIS. 
 2. Vérifier que le Plugin de base de QGIS nommé Processing (icone engrenage gris) soit bien activé. Extention -> Gérer les extensions -> Extensions Installées -> Activer Processing.
 
-
+---
 
 ## Récapitulatif rapide
 
