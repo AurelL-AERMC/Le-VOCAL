@@ -210,32 +210,21 @@ De plus, les canaux ne sont pas comptabilisé de la meme manièr entre les DDTM 
 
 ## 4.5 Programme 5 — État de connaissance des ouvrages Agence
 
-Le programme **État de connaissance des ouvrages Agence** ne vise pas une analyse des prélèvements, mais un **diagnostic de qualité des données**.
+Le programme **État de connaissance des ouvrages Agence** ne vise pas une analyse des prélèvements, mais un **diagnostic de qualité des données** de l'Agence.
+C'est un programme un peu particulier, plutôt a destination d'un usage interne Agence.
+Il permet :
+- D'identifier la qualité de la localisation.
+- Repérer les campagnes de fiabilisation récentes.
+- D'identifier les points avec ou sans interlocuteur.
 
-### Objectifs principaux
-
-- Identifier les ouvrages pour lesquels certaines informations essentielles sont manquantes.
-- Repérer les incohérences ou les modifications récentes.
-- Produire des indicateurs de complétude par zone.
-
-### Types de résultats produits
-
-- Liste des ouvrages sans coordonnées géographiques.
-- Liste des ouvrages sans propriétaire ou interlocuteur renseigné.
-- Indicateurs de complétude agrégés par territoire.
-- Couches mettant en évidence les entités nécessitant une mise à jour.
-
-### Utilisation recommandée
-
-- Priorisation des actions de mise à jour des bases de données.
-- Appui aux échanges entre partenaires (Agence, DDT(M), EPTB).
-- Amélioration progressive de la fiabilité des analyses issues des autres programmes.
+Aucune difficulté d'analyse semble se présenter.
 
 ---
+
 
 ## Conclusion de la phase d’analyse
 
 Les résultats produits par VOCAL constituent des **outils d’aide à la décision**.  
-Ils doivent être interprétés avec méthode, esprit critique et en lien avec la connaissance métier des territoires.
+Ils doivent être interprétés avec beaucoup de recul et necessite en général une analyse approfondie.
 
-VOCAL ne remplace pas l’expertise humaine : il la **structure, l’oriente et la rend plus lisible**.
+Une fois ce travail de compréhension des sorties de VOCAL on peut désormais se lancer dans la création d'une carte pour représenter proprement ces informations. [La suite est donc ici : Réaliser une carte avec VOCAL](valorisation_deb)
