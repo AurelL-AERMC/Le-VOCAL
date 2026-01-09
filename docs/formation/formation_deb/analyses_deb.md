@@ -6,7 +6,7 @@ nav_order: 4
 ---
 
 
-# Formation à VOCAL : Analyser et interpréter les résultats de VOCAL
+# Analyser et interpréter les résultats de VOCAL
 
 
 Cette section a pour objectif d’aider à **lire, comprendre et interpréter les résultats produits par les différents programmes de VOCAL**.  
