@@ -15,4 +15,4 @@ Vous pouvez selectionner la formation qui vous correspond le plus ci dessous :
 
 ## Quelle formation est faite pour vous ?
 - [Formation : Je n'ai jamais lancé QGIS de ma vie (ou j'ai tout oublié)](formation/formation_deb)
-- [Formation : J'ai déjà lancé QGIS](formation/formation_avance)
+- [Formation : J'ai déjà lancé QGIS](formation/formation_avance)   <- N'existe pas encore, désolé
