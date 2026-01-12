@@ -96,7 +96,7 @@ Dans la section **Délimiteurs** :
 
 Si toutes les données apparaissent dans une seule colonne, le séparateur est incorrect.
 
-![Vérification du séparateur CSV]({{ "/assets/images/formation/screen_csv_separateur.png" | relative_url }})
+![Vérification du séparateur CSV]({{ "/assets/images/formation/screen_gestionnaire_donnees_csv.png" | relative_url }})
 
 *Figure X — Vérification du séparateur de colonnes*
 
@@ -117,9 +117,6 @@ Ceci est essentiel pour :
 - l’appariement des bases,
 - le bon fonctionnement des programmes VOCAL.
 
-![Vérification du type des champs]({{ "/assets/images/formation/screen_csv_types_champs.png" | relative_url }})
-
-*Figure X — Vérification du type des champs (identifiants)*
 
 ---
 
@@ -171,9 +168,6 @@ Une fois le GeoPackage sélectionné :
 - sélectionner une ou plusieurs couches selon les besoins,
 - cliquer sur **Ajouter**.
 
-![Sélection des couches GeoPackage]({{ "/assets/images/formation/screen_gpkg_selection_couches.png" | relative_url }})
-
-*Figure X — Sélection des couches à charger depuis un GeoPackage*
 
 Les couches sélectionnées apparaissent alors dans le panneau des couches QGIS.
 

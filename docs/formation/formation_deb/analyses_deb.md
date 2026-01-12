@@ -75,9 +75,11 @@ Pour cela :
 1. Faire un **clic droit** sur la couche que l'on veut exporter.
 2. Cliquer sur **Exporter** → **Sauvegarder les entités sous…**.
 
-![Menu export des entités]({{ "/assets/images/formation/screen_export_menu.png" | relative_url }})
+![Menu export des entités]({{ "/assets/images/formation/screen_export_clic.png" | relative_url }})
 
 *Figure X — Menu d’export des entités dans QGIS*
+
+
 
 Dans la fenêtre d’export :
 1. Choisir le **format**. Par exemple : *Microsoft Excel (*.xlsx)*.
@@ -85,6 +87,10 @@ Dans la fenêtre d’export :
 3. Cocher **Exporter uniquement les entités sélectionnées** si nécessaire. Vous pouvez en effet utiliser des sélections pour exporter uniquement un sous-ensemble des résultats.
 4. Cliquer sur **OK**.
 
+
+![Menu export des entités]({{ "/assets/images/formation/screen_export_menu.png" | relative_url }})
+
+*Figure X — Menu d’export des entités dans QGIS*
 
 Le fichier généré contient l’ensemble des champs attributaires, y compris :
 - les indicateurs calculés par VOCAL
