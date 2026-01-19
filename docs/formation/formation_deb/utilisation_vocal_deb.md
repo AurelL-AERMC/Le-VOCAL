@@ -238,7 +238,7 @@ Les autres options sont plus techniques et seront abordées dans la section **3.
 
 Le menu complété doit ressembler à ceci :
 
-![Exemple remplissage premier programme VOCAL]({{ "/assets/images/formation/screen_utilisation_premier_programme_rempli.png" | relative_url }})
+![Exemple remplissage premier programme VOCAL]({{ "/assets/images/formation/screen_utilisation_troisieme_programme_rempli.png" | relative_url }})
 
 *Figure X — Exemple de remplissage du troisième programme VOCAL*
 
