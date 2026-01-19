@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-## Présentation rapide
-VOCAL est un plugin QGIS qui facilite :
-- la préparation d'une zone d'étude (chargement / extraction mémoire),
-- la copie automatique des scripts Processing (dans `Processing/scripts` utilisateur) pour rendre accessibles plusieurs algorithmes de valorisation personnalisés,
-- le lancement gui-friendly des algorithmes de traitement (pentes, ratios, etc.).
-Les outils de valorisation sont portés par les algorithmes, le plugin n'est qu'un orchestrateur de ces programmes.
-
-Le plugin fournit une interface en 2 étapes :
-1. choix du programme + choix et chargement de la zone d'étude et potentiellement des sous-zones de travails (avec option pour créer une couche mémoire restreinte)
-2. copie des scripts et ouverture automatique de la boîte d'outil Processing pour l'algorithme sélectionné.
-
-Plus d'information dans le README ou sur le Repo Github https://github.com/AurelL-AERMC/Le-VOCAL
-
+## VOCAL - Version 2.0 (Refactorisée)
+Améliorations :
+- Interface mono-page fluide
+- Mémorisation de la zone d'étude entre sessions
+- Code nettoyé (extraction fonctions, logs structurés)
+- Validation robuste des inputs
 """
 
 import os
@@ -21,24 +14,20 @@ import traceback
 from qgis.PyQt import QtWidgets, QtCore, QtGui
 from qgis.core import (
     QgsApplication, QgsProject, QgsVectorLayer, QgsFeatureRequest,
-    QgsWkbTypes, QgsFeature, QgsFields, QgsGeometry
+    QgsWkbTypes, QgsFeature, QgsFields, QgsGeometry, QgsSettings,
+    QgsMessageLog, Qgis, QgsSpatialIndex
 )
 from qgis import processing
 from qgis.utils import iface
 
-# ---------------- USER CONFIG ----------------
-PLUGIN_DIR = os.path.abspath(os.path.dirname(__file__))
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 
+PLUGIN_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_FOLDER = os.path.join(PLUGIN_DIR, 'Couches')
 NETWORK_SCRIPTS_FOLDER = os.path.join(PLUGIN_DIR, 'scripts')
-QML_COUCHES_FOLDER = os.path.join(BASE_FOLDER, 'QML_Couches')
-
-
-# DEBUG (optionnel) : affiche dans la console où l'on lira les couches/scripts
-print(f"[Orch] PLUGIN_DIR = {PLUGIN_DIR}")
-print(f"[Orch] BASE_FOLDER = {BASE_FOLDER}")
-print(f"[Orch] NETWORK_SCRIPTS_FOLDER = {NETWORK_SCRIPTS_FOLDER}")
-print(f"[Orch] QML_COUCHES_FOLDER = {QML_COUCHES_FOLDER}")
+QML_COUCHES_FOLDER = os.path.join(PLUGIN_DIR, 'QML')  # Modifié : utilise maintenant ~/QML au lieu de ~/Couches/QML_Couches
 
 GPKG_MAP = {
     'Délégation': 'limite_Deleg.gpkg',
@@ -51,73 +40,83 @@ GPKG_MAP = {
 
 DEPT_FIELD = 'nom_dept'
 BV_FIELD = 'lib_ssbv'
+UNASSIGNED_LABEL = 'Non assigné'
 
-# ---------------- Added/Updated Algorithms ----------------
 ALGO_INFOS = {
     'Evolution des volumes prélevés par ouvrage': {
         'alg_id': 'script:compute_slopes_ouvrage_only',
-        'script_name': 'compute_slopes_qgis_ouvrages.py'
+        'script_name': 'compute_slopes_qgis_ouvrages.py',
+        'qml_name': 'ouvrages_slopes_QML.qml'  # Nouveau : nom du QML associé
     },
     'Evolution des volumes prélevés agrégés par zone': {
         'alg_id': 'script:compute_slopes_zones',
-        'script_name': 'compute_slopes_qgis_zonages.py'
+        'script_name': 'compute_slopes_qgis_zonages.py',
+        'qml_name': 'zonage_slopes_QML.qml'  # À adapter selon ton QML
     },
     'Ratio VolPrelev/VolAutorise par ouvrage': {
         'alg_id': 'script:compare_prelevements_autorises',
-        'script_name': 'compute_ratio_VPVA_ouvrages.py'
+        'script_name': 'compute_ratio_VPVA_ouvrages.py',
+        'qml_name': 'ratio_VPVA_ouvrages_QML.qml'  # À adapter
     },
     'Ratio VolPrelev/VolAutorise par zonage': {
         'alg_id': 'script:zones_compare_prelev_autorise',
-        'script_name': 'compute_ratio_VPVA_zonages.py'
+        'script_name': 'compute_ratio_VPVA_zonages.py',
+        'qml_name': 'QML_ratio_VPVA_zonage.qml'  # À adapter
     },
-    
     "État connaissance - ouvrages Agence": {
-        # use the exact id you provided (include 'script:' prefix if that's how it appears in the Toolbox)
         'alg_id': 'script:compute_connaissance_ouvrages_agence',
-        'script_name': 'compute_connaissance_ouvrages_agence.py'
+        'script_name': 'compute_connaissance_ouvrages_agence.py',
+        'qml_name': 'connaissance_ouvrages_QML.qml'  # À adapter
     }
-    #Ajouter ici un nouveau programme si besoin
 }
 
-# ---------------- Helpers ----------------
+# ============================================================================
+# LOGS STRUCTURÉS
+# ============================================================================
+
+def log_info(msg):
+    QgsMessageLog.logMessage(msg, 'VOCAL', Qgis.Info)
+
+def log_warning(msg):
+    QgsMessageLog.logMessage(msg, 'VOCAL', Qgis.Warning)
+
+def log_error(msg):
+    QgsMessageLog.logMessage(msg, 'VOCAL', Qgis.Critical)
+
+# ============================================================================
+# HELPERS - GESTION GPKG/COUCHES
+# ============================================================================
 
 def gpkg_path_for(scale_label):
     fname = GPKG_MAP.get(scale_label)
-    if not fname:
-        return None
-    return os.path.join(BASE_FOLDER, fname)
+    return os.path.join(BASE_FOLDER, fname) if fname else None
 
 def try_load_gpkg_layer(gpkg_path):
-    """Essaie de charger une couche depuis un GeoPackage. Retourne QgsVectorLayer (non ajouté) ou None."""
+    """Essaie de charger une couche depuis un GeoPackage."""
     if not gpkg_path or not os.path.exists(gpkg_path):
         return None
     base = os.path.splitext(os.path.basename(gpkg_path))[0]
     candidates = [base, base.lower(), base.upper(), 'departements', 'communes', 'BV', 'bv', 'nappes', 'limite_Deleg']
     for name in candidates:
         uri = f"{gpkg_path}|layername={name}"
-        layer = QgsVectorLayer(uri, f"{name}", "ogr")
+        layer = QgsVectorLayer(uri, name, "ogr")
         if layer.isValid():
             return layer
     layer = QgsVectorLayer(gpkg_path, base, "ogr")
-    if layer.isValid():
-        return layer
-    return None
+    return layer if layer.isValid() else None
 
 def list_zone_values(layer, fieldname):
+    if not layer or not fieldname or layer.fields().indexFromName(fieldname) < 0:
+        return []
     vals = set()
-    if layer is None or fieldname is None:
-        return []
-    if layer.fields().indexFromName(fieldname) < 0:
-        return []
     for f in layer.getFeatures():
         v = f[fieldname]
-        if v is None:
-            continue
-        vals.add(str(v))
+        if v is not None:
+            vals.add(str(v))
     return sorted(vals)
 
 def load_layer_to_project(layer, add_if_not=True):
-    if layer is None:
+    if not layer:
         return None
     existing = QgsProject.instance().mapLayersByName(layer.name())
     if existing:
@@ -129,18 +128,15 @@ def load_layer_to_project(layer, add_if_not=True):
 def zoom_to_layer(layer):
     if not layer:
         return
-    canvas = iface.mapCanvas()
     try:
         extent = layer.extent()
+        if extent and not extent.isEmpty():
+            iface.mapCanvas().setExtent(extent)
+            iface.mapCanvas().refresh()
     except Exception:
-        return
-    if extent is None or extent.isEmpty():
-        return
-    canvas.setExtent(extent)
-    canvas.refresh()
+        pass
 
 def _geom_type_string_from_wkb(wkb):
-    """Retourne 'Polygon'/'LineString'/'Point' ou 'Unknown' à partir d'un wkbType."""
     try:
         gt = QgsWkbTypes.geometryType(wkb)
         if gt == QgsWkbTypes.PolygonGeometry:
@@ -152,11 +148,10 @@ def _geom_type_string_from_wkb(wkb):
     except Exception:
         pass
     try:
-        s = QgsWkbTypes.displayString(wkb)
-        s = s.lower() if isinstance(s, str) else ''
+        s = QgsWkbTypes.displayString(wkb).lower()
         if 'polygon' in s:
             return 'Polygon'
-        if 'line' in s or 'linestring' in s:
+        if 'line' in s:
             return 'LineString'
         if 'point' in s:
             return 'Point'
@@ -164,28 +159,30 @@ def _geom_type_string_from_wkb(wkb):
         pass
     return 'Unknown'
 
-def create_memory_layer_from_features(source_layer, features, name_suffix="_mem"):
-    """Crée une couche mémoire à partir d'une liste de features (copie champs/crs/geom)."""
-    if source_layer is None or not features:
+def create_memory_layer_from_features(source_layer, features, name_suffix="_mem", add_to_project=True):
+    """Crée une couche mémoire à partir d'une liste de features."""
+    if not source_layer or not features:
         return None
 
     geom_type = _geom_type_string_from_wkb(source_layer.wkbType())
     if geom_type == 'Unknown':
         try:
             test_geom = features[0].geometry()
-            if test_geom is not None:
+            if test_geom:
                 t = test_geom.type()
-                if t == 2:  # polygon
-                    geom_type = 'Polygon'
-                elif t == 1:
-                    geom_type = 'LineString'
-                else:
-                    geom_type = 'Point'
+                geom_type = {2: 'Polygon', 1: 'LineString', 0: 'Point'}.get(t, 'Polygon')
         except Exception:
             geom_type = 'Polygon'
 
     crs_auth = source_layer.crs().authid() if source_layer.crs() else ''
     layer_name = f"{source_layer.name()}{name_suffix}"
+    
+    # IMPORTANT : Vérifier si une couche avec ce nom existe déjà dans le projet
+    existing = QgsProject.instance().mapLayersByName(layer_name)
+    if existing:
+        log_info(f"Couche mémoire existante réutilisée : {layer_name}")
+        return existing[0]
+    
     uri = f"{geom_type}?crs={crs_auth}"
     mem = QgsVectorLayer(uri, layer_name, "memory")
     dp = mem.dataProvider()
@@ -213,183 +210,299 @@ def create_memory_layer_from_features(source_layer, features, name_suffix="_mem"
                     attrs.append(f.attribute(fld.name()))
                 except Exception:
                     attrs.append(None)
-            try:
-                nf.setAttributes(attrs)
-            except Exception:
-                pass
+            nf.setAttributes(attrs)
         feats_to_add.append(nf)
 
     try:
         dp.addFeatures(feats_to_add)
         mem.updateExtents()
-        QgsProject.instance().addMapLayer(mem)
+        if add_to_project:
+            QgsProject.instance().addMapLayer(mem)
         return mem
     except Exception:
         return None
 
-def ensure_scripts_in_user_folder(feedback=None):
-    """Copy network scripts into the user's processing scripts folder (if missing)."""
-    out = []
+# ============================================================================
+# HELPER - INTERSECTION SPATIALE (FONCTION UNIQUE RÉUTILISABLE)
+# ============================================================================
+
+def intersect_layer_with_reference(source_layer, ref_layer, zone_value=None):
+    """
+    Intersecte source_layer avec ref_layer et retourne une couche mémoire.
+    
+    Args:
+        source_layer: couche à filtrer
+        ref_layer: couche de référence (zone d'étude)
+        zone_value: valeur pour le suffixe du nom (optionnel)
+    
+    Returns:
+        QgsVectorLayer (mémoire) ou None
+    """
+    if not source_layer or not ref_layer:
+        return None
+    
+    try:
+        # Construction index spatial pour performance
+        ref_index = QgsSpatialIndex(ref_layer.getFeatures())
+        ref_geoms = {}
+        for f in ref_layer.getFeatures():
+            ref_geoms[f.id()] = f.geometry()
+        
+        intersects = []
+        for f in source_layer.getFeatures():
+            try:
+                fg = f.geometry()
+                if not fg or fg.isEmpty():
+                    continue
+                
+                # Recherche candidates par bbox
+                candidates = ref_index.intersects(fg.boundingBox())
+                for cid in candidates:
+                    rg = ref_geoms.get(cid)
+                    if rg and not rg.isEmpty() and rg.intersects(fg):
+                        intersects.append(f)
+                        break
+            except Exception:
+                continue
+        
+        if intersects:
+            suffix = f"_INTER_{zone_value}" if zone_value else "_INTER"
+            return create_memory_layer_from_features(source_layer, intersects, name_suffix=suffix)
+        else:
+            log_warning("Aucune entité n'intersecte la zone de référence")
+            return None
+            
+    except Exception as e:
+        log_error(f"Erreur intersection spatiale: {e}")
+        return None
+
+# ============================================================================
+# HELPER - GESTION DES SCRIPTS
+# ============================================================================
+
+def ensure_scripts_in_user_folder():
+    """Copie les scripts réseau vers le dossier utilisateur ET injecte les chemins QML dynamiques."""
+    copied = []
     try:
         user_proc_scripts = os.path.join(QgsApplication.qgisSettingsDirPath(), 'processing', 'scripts')
         os.makedirs(user_proc_scripts, exist_ok=True)
-        for info in ALGO_INFOS.values():
+        
+        for prog_name, info in ALGO_INFOS.items():
             sn = info.get('script_name')
+            qml_name = info.get('qml_name')
             if not sn:
                 continue
+            
             src = os.path.join(NETWORK_SCRIPTS_FOLDER, sn)
             dst = os.path.join(user_proc_scripts, sn)
+            
             if os.path.exists(src):
                 try:
-                    if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(src):
-                        shutil.copy2(src, dst)
-                        if feedback:
-                            feedback(f"[Orch] Copié script -> {dst}")
+                    # Lire le contenu du script source
+                    with open(src, 'r', encoding='utf-8') as f:
+                        script_content = f.read()
+                    
+                    # Si un QML est associé, remplacer le chemin par défaut par le chemin dynamique
+                    if qml_name:
+                        qml_path_dynamic = os.path.join(QML_COUCHES_FOLDER, qml_name)
+                        qml_path_normalized = os.path.normpath(qml_path_dynamic).replace('\\', '\\\\')
+                        
+                        # Pattern pour détecter : default_qml = r"N:\..." ou defaultValue="N:\..."
+                        import re
+                        # Remplacer les chemins hardcodés par le chemin dynamique
+                        script_content = re.sub(
+                            r'(default_qml\s*=\s*r?["\']).*?(["\'])',
+                            r'\1' + qml_path_normalized + r'\2',
+                            script_content
+                        )
+                        script_content = re.sub(
+                            r'(defaultValue\s*=\s*r?["\']).*?(\.qml["\'])',
+                            r'\1' + qml_path_normalized + r'\2',
+                            script_content
+                        )
+                    
+                    # Vérifier si le fichier destination existe et est différent
+                    need_write = True
+                    if os.path.exists(dst):
+                        try:
+                            with open(dst, 'r', encoding='utf-8') as f:
+                                existing_content = f.read()
+                            if existing_content == script_content:
+                                need_write = False
+                        except Exception:
+                            pass
+                    
+                    if need_write:
+                        with open(dst, 'w', encoding='utf-8') as f:
+                            f.write(script_content)
+                        log_info(f"Script copié avec chemin QML injecté: {sn}")
                     else:
-                        if feedback:
-                            feedback(f"[Orch] Script déjà présent -> {dst}")
-                    out.append(dst)
+                        log_info(f"Script déjà à jour: {sn}")
+                    
+                    copied.append(dst)
                 except Exception as e:
-                    if feedback:
-                        feedback(f"[Orch] Erreur copie script {src} : {e}")
+                    log_error(f"Erreur copie/injection {sn}: {e}")
             else:
-                if feedback:
-                    feedback(f"[Orch] Script source introuvable (réseau) : {src}")
+                log_warning(f"Script introuvable: {src}")
     except Exception as e:
-        if feedback:
-            feedback(f"[Orch] Erreur lors de la mise en place des scripts utilisateurs : {e}")
-    return out
+        log_error(f"Erreur copie scripts: {e}")
+    return copied
 
-# ---------------- Main UI ----------------
+# ============================================================================
+# HELPER - GESTION QML
+# ============================================================================
+
+def apply_qml_to_layer(layer, gpkg_basename):
+    """Applique un QML à une couche si le fichier existe."""
+    if not layer:
+        return False
+    try:
+        qmlname = f"QML_{os.path.splitext(gpkg_basename)[0]}"
+        qmlpath = os.path.join(QML_COUCHES_FOLDER, qmlname + '.qml')
+        if os.path.exists(qmlpath):
+            layer.loadNamedStyle(qmlpath)
+            layer.triggerRepaint()
+            return True
+    except Exception as e:
+        log_warning(f"Erreur application QML: {e}")
+    return False
+
+# ============================================================================
+# DIALOGUE PRINCIPAL (VERSION MONO-PAGE)
+# ============================================================================
+
 class PrelevOrchestratorDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent or iface.mainWindow())
-        self.setWindowTitle('Orchestrateur — Prélèvements (lanceur)')
-        self.resize(920, 560)
-
-        # stacked pages
-        self.stack = QtWidgets.QStackedWidget()
-        self.page1 = QtWidgets.QWidget()
-        self.page2 = QtWidgets.QWidget()
-        self._build_page1()
-        self._build_page2()
-        self.stack.addWidget(self.page1)
-        self.stack.addWidget(self.page2)
-
-        # buttons
-        btn_box = QtWidgets.QHBoxLayout()
-        self.prev_btn = QtWidgets.QPushButton('Précédent')
-        self.prev_btn.clicked.connect(self.on_prev)
-        self.next_btn = QtWidgets.QPushButton('Suivant')
-        self.next_btn.clicked.connect(self.on_next)
-        self.open_algo_btn = QtWidgets.QPushButton("Ouvrir l'outil Processing")
-        self.open_algo_btn.clicked.connect(self.on_open_algo)
-        self.open_algo_btn.setEnabled(False)
-        btn_box.addStretch()
-        btn_box.addWidget(self.prev_btn)
-        btn_box.addWidget(self.next_btn)
-        btn_box.addWidget(self.open_algo_btn)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.stack)
-        layout.addLayout(btn_box)
-        self.setLayout(layout)
-
-        self.prev_btn.setEnabled(False)
-
-        # state
-        self.selected_program = None
-        self.zone_layer = None           # couche source gpkg (non ajoutée)
-        self.zone_mem_layer = None       # couche mémoire limitée
+        self.setWindowTitle('VOCAL — Orchestrateur Prélèvements')
+        self.resize(950, 700)
+        
+        # État interne
+        self.zone_layer = None
+        self.zone_mem_layer = None
         self.zone_value = None
         self.optional_zonage_layer = None
-
-    def _build_page1(self):
-        layout = QtWidgets.QVBoxLayout()
-
-        grp_prog = QtWidgets.QGroupBox('1) Choix du programme')
-        v = QtWidgets.QVBoxLayout()
+        
+        self._build_ui()
+        self._load_saved_zone()
+        
+    def _build_ui(self):
+        main_layout = QtWidgets.QVBoxLayout()
+        
+        # ========== SECTION 1 : PROGRAMME ==========
+        grp_prog = QtWidgets.QGroupBox('1️⃣ Choix du programme')
+        v_prog = QtWidgets.QVBoxLayout()
         self.prog_combo = QtWidgets.QComboBox()
         for k in ALGO_INFOS.keys():
             self.prog_combo.addItem(k)
-        v.addWidget(self.prog_combo)
-        grp_prog.setLayout(v)
-
-        grp_zone = QtWidgets.QGroupBox('2) Zone d\'étude')
-        gz = QtWidgets.QGridLayout()
-        gz.addWidget(QtWidgets.QLabel('Echelle'), 0, 0)
+        v_prog.addWidget(self.prog_combo)
+        grp_prog.setLayout(v_prog)
+        
+        # ========== SECTION 2 : ZONE D'ÉTUDE (COLLAPSIBLE) ==========
+        self.grp_zone = QtWidgets.QGroupBox("2️⃣ Zone d'étude")
+        self.grp_zone.setCheckable(True)
+        self.grp_zone.setChecked(False)  # Replié par défaut si zone en mémoire
+        
+        zone_layout = QtWidgets.QGridLayout()
+        
+        # Indicateur zone active
+        self.zone_status_label = QtWidgets.QLabel()
+        self.zone_status_label.setStyleSheet("color: green; font-weight: bold;")
+        zone_layout.addWidget(self.zone_status_label, 0, 0, 1, 2)
+        
+        zone_layout.addWidget(QtWidgets.QLabel('Échelle'), 1, 0)
         self.scale_combo = QtWidgets.QComboBox()
         self.scale_combo.addItems(list(GPKG_MAP.keys()))
-        self.scale_combo.currentTextChanged.connect(self.on_scale_changed)
-        gz.addWidget(self.scale_combo, 0, 1)
-        gz.addWidget(QtWidgets.QLabel('Valeur'), 1, 0)
+        self.scale_combo.currentTextChanged.connect(self._on_scale_changed)
+        zone_layout.addWidget(self.scale_combo, 1, 1)
+        
+        zone_layout.addWidget(QtWidgets.QLabel('Valeur'), 2, 0)
         self.zone_value_combo = QtWidgets.QComboBox()
-        gz.addWidget(self.zone_value_combo, 1, 1)
-        self.load_zone_btn = QtWidgets.QPushButton('Charger zone et zoom')
-        self.load_zone_btn.clicked.connect(self.on_load_zone)
-        gz.addWidget(self.load_zone_btn, 2, 0, 1, 2)
-        grp_zone.setLayout(gz)
-
-        # checkbox memory layer
-        self.create_memory_checkbox = QtWidgets.QCheckBox("Créer couche mémoire limitée à la zone d'étude (recommandé)")
+        zone_layout.addWidget(self.zone_value_combo, 2, 1)
+        
+        self.load_zone_btn = QtWidgets.QPushButton('📍 Charger zone et zoom')
+        self.load_zone_btn.clicked.connect(self._on_load_zone)
+        zone_layout.addWidget(self.load_zone_btn, 3, 0, 1, 2)
+        
+        self.create_memory_checkbox = QtWidgets.QCheckBox("Créer couche mémoire limitée (recommandé)")
         self.create_memory_checkbox.setChecked(True)
-
-        # checkbox to reveal zonage options (NEW)
-        self.show_zonage_checkbox = QtWidgets.QCheckBox("Voulez-vous charger un sous-zonage ?")
+        zone_layout.addWidget(self.create_memory_checkbox, 4, 0, 1, 2)
+        
+        self.grp_zone.setLayout(zone_layout)
+        
+        # ========== SECTION 3 : ZONAGE OPTIONNEL ==========
+        self.show_zonage_checkbox = QtWidgets.QCheckBox("3️⃣ Charger un sous-zonage (optionnel)")
         self.show_zonage_checkbox.setChecked(False)
-
-        # optional zonage: combo + browse, combo contains server gpkg entries + project vector layers
-        grp_optional = QtWidgets.QGroupBox('Optionnel : zonage (server / projet / fichier)')
-        gh = QtWidgets.QGridLayout()
-        gh.addWidget(QtWidgets.QLabel("Choisir zonage (serveur / projet)"), 0, 0)
+        
+        self.grp_zonage = QtWidgets.QGroupBox('Configuration du sous-zonage')
+        zonage_layout = QtWidgets.QGridLayout()
+        
+        zonage_layout.addWidget(QtWidgets.QLabel("Source (serveur/projet)"), 0, 0)
         self.zonage_combo = QtWidgets.QComboBox()
-        gh.addWidget(self.zonage_combo, 0, 1)
-        gh.addWidget(QtWidgets.QLabel("Ou parcourir un fichier"), 1, 0)
-        self.zonage_path_edit = QtWidgets.QLineEdit()
-        self.zonage_browse = QtWidgets.QPushButton('Parcourir')
-        self.zonage_browse.clicked.connect(self.on_browse_zonage)
-        h2 = QtWidgets.QHBoxLayout()
-        h2.addWidget(self.zonage_path_edit)
-        h2.addWidget(self.zonage_browse)
-        gh.addLayout(h2, 1, 1)
-        grp_optional.setLayout(gh)
-
-        # fill zonage_combo with server gpkg bases + project vector layers
         self._populate_zonage_combo()
-
-        # hide optional zonage by default; will be shown only when user checks the checkbox
-        grp_optional.setVisible(False)
-        self.show_zonage_checkbox.toggled.connect(lambda checked: grp_optional.setVisible(checked))
-
-        # QML options
-        qml_box = QtWidgets.QGroupBox('QML (appliquer aux couches chargées)')
-        qh = QtWidgets.QFormLayout()
-        self.qml_zone_checkbox = QtWidgets.QCheckBox('Appliquer QML à la couche zone d\'étude (ou mémoire)')
-        self.qml_zonage_checkbox = QtWidgets.QCheckBox('Appliquer QML à la couche zonage (si fournie)')
+        zonage_layout.addWidget(self.zonage_combo, 0, 1)
+        
+        zonage_layout.addWidget(QtWidgets.QLabel("Ou fichier externe"), 1, 0)
+        self.zonage_path_edit = QtWidgets.QLineEdit()
+        self.zonage_browse = QtWidgets.QPushButton('📂 Parcourir')
+        self.zonage_browse.clicked.connect(self._on_browse_zonage)
+        h_browse = QtWidgets.QHBoxLayout()
+        h_browse.addWidget(self.zonage_path_edit)
+        h_browse.addWidget(self.zonage_browse)
+        zonage_layout.addLayout(h_browse, 1, 1)
+        
+        self.grp_zonage.setLayout(zonage_layout)
+        self.grp_zonage.setVisible(False)
+        self.show_zonage_checkbox.toggled.connect(lambda c: self.grp_zonage.setVisible(c))
+        
+        # ========== SECTION 4 : OPTIONS QML ==========
+        grp_qml = QtWidgets.QGroupBox('4️⃣ Styles visuels (QML)')
+        qml_layout = QtWidgets.QVBoxLayout()
+        self.qml_zone_checkbox = QtWidgets.QCheckBox("Appliquer QML à la zone d'étude")
+        self.qml_zonage_checkbox = QtWidgets.QCheckBox("Appliquer QML au sous-zonage")
         self.qml_zone_checkbox.setChecked(True)
         self.qml_zonage_checkbox.setChecked(True)
-        qh.addRow(self.qml_zone_checkbox)
-        qh.addRow(self.qml_zonage_checkbox)
-        qml_box.setLayout(qh)
-
-        info = QtWidgets.QLabel('Remarque : les scripts seront copiés dans ton dossier Processing/scripts utilisateur si nécessaire.\n'
-                                 'Clique "Suivant" pour copier les scripts et préparer l\'ouverture de l\'outil Processing.\n'
-                                 'Le plugin se fermera automatiquement lorsqu\'il ouvrira l\'outil Processing.')
-
-        layout.addWidget(grp_prog)
-        layout.addWidget(grp_zone)
-        layout.addWidget(self.create_memory_checkbox)
-        layout.addWidget(self.show_zonage_checkbox)
-        layout.addWidget(grp_optional)
-        layout.addWidget(qml_box)
-        layout.addWidget(info)
-        self.page1.setLayout(layout)
-
-        self.on_scale_changed(self.scale_combo.currentText())
-
+        qml_layout.addWidget(self.qml_zone_checkbox)
+        qml_layout.addWidget(self.qml_zonage_checkbox)
+        grp_qml.setLayout(qml_layout)
+        
+        # ========== SECTION 5 : INFO ==========
+        info_label = QtWidgets.QLabel(
+            '💡 <b>Astuce</b> : La zone d\'étude est mémorisée entre les sessions.<br>'
+            'Si une zone est active, tu peux directement lancer le programme sans la recharger.'
+        )
+        info_label.setWordWrap(True)
+        info_label.setStyleSheet("background-color: #e8f4f8; padding: 10px; border-radius: 5px;")
+        
+        # ========== BOUTONS D'ACTION ==========
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        
+        self.clear_zone_btn = QtWidgets.QPushButton('🗑️ Effacer zone')
+        self.clear_zone_btn.clicked.connect(self._clear_zone)
+        
+        self.launch_btn = QtWidgets.QPushButton('🚀 Lancer l\'outil Processing')
+        self.launch_btn.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px;")
+        self.launch_btn.clicked.connect(self._on_launch)
+        
+        btn_layout.addWidget(self.clear_zone_btn)
+        btn_layout.addWidget(self.launch_btn)
+        
+        # ========== ASSEMBLAGE ==========
+        main_layout.addWidget(grp_prog)
+        main_layout.addWidget(self.grp_zone)
+        main_layout.addWidget(self.show_zonage_checkbox)
+        main_layout.addWidget(self.grp_zonage)
+        main_layout.addWidget(grp_qml)
+        main_layout.addWidget(info_label)
+        main_layout.addStretch()
+        main_layout.addLayout(btn_layout)
+        
+        self.setLayout(main_layout)
+        self._on_scale_changed(self.scale_combo.currentText())
+        
     def _populate_zonage_combo(self):
         self.zonage_combo.clear()
-        # server gpkg candidates (use file basename as label, store full path in data)
         try:
             for fname in os.listdir(BASE_FOLDER):
                 if fname.lower().endswith('.gpkg'):
@@ -397,396 +510,292 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
                     self.zonage_combo.addItem(f"[srv] {fname}", full)
         except Exception:
             pass
-        # separator
-        self.zonage_combo.addItem("---- Couches du projet ----", None)
-        # project vector layers
+        self.zonage_combo.addItem("──── Couches projet ────", None)
         for lyr in QgsProject.instance().mapLayers().values():
             if isinstance(lyr, QgsVectorLayer):
                 self.zonage_combo.addItem(f"[proj] {lyr.name()}", lyr.id())
-
-    def on_scale_changed(self, text):
+    
+    def _on_scale_changed(self, text):
         gpkg = gpkg_path_for(text)
         layer = try_load_gpkg_layer(gpkg)
         self.zone_value_combo.clear()
-        if layer is None:
+        
+        if not layer:
             self.zone_value_combo.addItem('-- couche introuvable --')
             return
+        
         if text == 'Départements':
             field = DEPT_FIELD
         elif text == 'Bassins versants':
             field = BV_FIELD
         else:
-            if layer.fields().indexFromName('name') >= 0:
-                field = 'name'
-            else:
-                field = None
-                for f in layer.fields():
-                    if f.typeName().lower().startswith('string'):
-                        field = f.name()
-                        break
-                if field is None:
-                    field = layer.fields()[0].name()
+            field = 'name' if layer.fields().indexFromName('name') >= 0 else layer.fields()[0].name()
+        
         vals = list_zone_values(layer, field)
         if vals:
             self.zone_value_combo.addItems(vals)
         else:
-            self.zone_value_combo.addItem('-- Aucun attribut trouvé --')
-
-    def on_browse_zonage(self):
-        fp, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Choisir une couche zonage (gpkg/shp)', BASE_FOLDER, 'GeoPackage (*.gpkg);;Shapefile (*.shp);;All (*)')
-        if not fp:
-            return
-        self.zonage_path_edit.setText(fp)
-
-    def on_load_zone(self):
+            self.zone_value_combo.addItem('-- Aucun attribut --')
+    
+    def _on_browse_zonage(self):
+        fp, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Choisir zonage', BASE_FOLDER, 
+            'GeoPackage (*.gpkg);;Shapefile (*.shp);;All (*)'
+        )
+        if fp:
+            self.zonage_path_edit.setText(fp)
+    
+    def _on_load_zone(self):
         scale = self.scale_combo.currentText()
         val = self.zone_value_combo.currentText()
         gpkg = gpkg_path_for(scale)
         layer = try_load_gpkg_layer(gpkg)
-        if layer is None:
+        
+        if not layer:
             QtWidgets.QMessageBox.warning(self, 'Erreur', f'Impossible de charger {gpkg}.')
             return
-
+        
         if scale == 'Départements':
             field = DEPT_FIELD
         elif scale == 'Bassins versants':
             field = BV_FIELD
         else:
-            if layer.fields().indexFromName('name') >= 0:
-                field = 'name'
-            else:
-                field = layer.fields()[0].name()
-
+            field = 'name' if layer.fields().indexFromName('name') >= 0 else layer.fields()[0].name()
+        
         expr = f'"{field}" = \'{val}\''
         try:
             it = layer.getFeatures(QgsFeatureRequest().setFilterExpression(expr))
             feats = [f for f in it]
         except Exception:
             feats = []
-
+        
         self.zone_layer = layer
         self.zone_value = val
-
-        if self.create_memory_checkbox.isChecked():
-            if feats:
-                mem = create_memory_layer_from_features(layer, feats, name_suffix=f"_INTER_{self.zone_value or ''}")
-                if mem is not None:
-                    self.zone_mem_layer = mem
-                    if self.qml_zone_checkbox.isChecked():
-                        qmlname = f"QML_{os.path.splitext(os.path.basename(gpkg or ''))[0]}"
-                        qmlpath = os.path.join(QML_COUCHES_FOLDER, qmlname + '.qml')
-                        if os.path.exists(qmlpath):
-                            try:
-                                mem.loadNamedStyle(qmlpath)
-                                mem.triggerRepaint()
-                            except Exception:
-                                pass
-                    zoom_to_layer(mem)
-                else:
-                    self.zone_mem_layer = None
-                    load_layer_to_project(layer, add_if_not=True)
-                    try:
-                        ids = [f.id() for f in feats]
-                        layer.removeSelection()
-                        layer.selectByIds(ids)
-                        canvas = iface.mapCanvas()
-                        canvas.setExtent(layer.boundingBoxOfSelected())
-                        canvas.refresh()
-                    except Exception:
-                        zoom_to_layer(layer)
+        
+        if self.create_memory_checkbox.isChecked() and feats:
+            # create_memory_layer_from_features vérifie maintenant en interne si la couche existe déjà
+            mem = create_memory_layer_from_features(layer, feats, name_suffix=f"_INTER_{val}")
+            if mem:
+                self.zone_mem_layer = mem
+                if self.qml_zone_checkbox.isChecked():
+                    apply_qml_to_layer(mem, os.path.basename(gpkg or ''))
+                zoom_to_layer(mem)
             else:
-                QtWidgets.QMessageBox.information(self, 'Info', f"Aucune entité correspondant à {val} trouvée dans la couche.")
-                self.zone_mem_layer = None
-                load_layer_to_project(layer, add_if_not=True)
+                self._load_full_zone(layer, feats)
+        else:
+            self._load_full_zone(layer, feats)
+        
+        self._save_zone_to_settings()
+        self._update_zone_status()
+        QtWidgets.QMessageBox.information(self, 'Zone chargée', f"Zone '{val}' chargée avec succès !")
+    
+    def _load_full_zone(self, layer, feats):
+        load_layer_to_project(layer, add_if_not=True)
+        if feats:
+            try:
+                ids = [f.id() for f in feats]
+                layer.selectByIds(ids)
+                iface.mapCanvas().setExtent(layer.boundingBoxOfSelected())
+                iface.mapCanvas().refresh()
+            except Exception:
                 zoom_to_layer(layer)
         else:
-            load_layer_to_project(layer, add_if_not=True)
-            if feats:
-                try:
-                    ids = [f.id() for f in feats]
-                    layer.removeSelection()
-                    layer.selectByIds(ids)
-                    canvas = iface.mapCanvas()
-                    canvas.setExtent(layer.boundingBoxOfSelected())
-                    canvas.refresh()
-                except Exception:
-                    zoom_to_layer(layer)
+            zoom_to_layer(layer)
+    
+    def _clear_zone(self):
+        self.zone_layer = None
+        self.zone_mem_layer = None
+        self.zone_value = None
+        settings = QgsSettings()
+        settings.remove('vocal/last_zone_scale')
+        settings.remove('vocal/last_zone_value')
+        self._update_zone_status()
+        QtWidgets.QMessageBox.information(self, 'Zone effacée', 'La zone mémorisée a été supprimée.')
+    
+    def _save_zone_to_settings(self):
+        if self.zone_value:
+            settings = QgsSettings()
+            settings.setValue('vocal/last_zone_scale', self.scale_combo.currentText())
+            settings.setValue('vocal/last_zone_value', self.zone_value)
+            log_info(f"Zone sauvegardée: {self.zone_value}")
+    
+    def _load_saved_zone(self):
+        settings = QgsSettings()
+        scale = settings.value('vocal/last_zone_scale')
+        val = settings.value('vocal/last_zone_value')
+        
+        if scale and val:
+            # Restaurer la sélection dans les combos
+            idx = self.scale_combo.findText(scale)
+            if idx >= 0:
+                self.scale_combo.setCurrentIndex(idx)
+            idx_val = self.zone_value_combo.findText(val)
+            if idx_val >= 0:
+                self.zone_value_combo.setCurrentIndex(idx_val)
+            
+            # Chercher d'abord si une couche avec ce nom existe déjà dans le projet
+            gpkg = gpkg_path_for(scale)
+            if gpkg:
+                base_layer = try_load_gpkg_layer(gpkg)
+                if base_layer:
+                    expected_mem_name = f"{base_layer.name()}_INTER_{val}"
+                    existing_layers = QgsProject.instance().mapLayersByName(expected_mem_name)
+                    
+                    if existing_layers:
+                        # Réutiliser la couche existante (pas de rechargement)
+                        self.zone_mem_layer = existing_layers[0]
+                        self.zone_layer = base_layer
+                        self.zone_value = val
+                        log_info(f"Zone existante réutilisée : {val}")
+                    else:
+                        # La couche n'existe pas dans le projet -> on ne fait rien
+                        # L'utilisateur devra recharger manuellement si besoin
+                        log_info(f"Zone sauvegardée trouvée ({val}) mais couche absente du projet - chargement manuel requis")
+                        self.zone_value = val
+        
+        self._update_zone_status()
+    
+    def _update_zone_status(self):
+        if self.zone_mem_layer or self.zone_layer:
+            txt = f"✅ Zone active : {self.zone_value or 'inconnue'}"
+            self.zone_status_label.setText(txt)
+            self.grp_zone.setChecked(False)  # Replier si zone déjà chargée
+        else:
+            self.zone_status_label.setText("⚠️ Aucune zone active (charge une zone ci-dessous)")
+            self.zone_status_label.setStyleSheet("color: orange; font-weight: bold;")
+            self.grp_zone.setChecked(True)  # Déplier pour forcer le chargement
+    
+    def _prepare_zonage(self):
+        """Prépare le zonage optionnel (intersecté avec zone d'étude)."""
+        if not self.show_zonage_checkbox.isChecked():
+            self.optional_zonage_layer = None
+            return
+        
+        ref_layer = self.zone_mem_layer or self.zone_layer
+        browse_fp = self.zonage_path_edit.text().strip()
+        chosen_data = self.zonage_combo.currentData()
+        
+        # Cas 1 : fichier externe
+        if browse_fp:
+            zl_src = QgsVectorLayer(browse_fp, os.path.basename(browse_fp), 'ogr')
+            if not zl_src.isValid():
+                QtWidgets.QMessageBox.warning(self, 'Erreur', f"Impossible de charger: {browse_fp}")
+                self.optional_zonage_layer = None
+                return
+            self.optional_zonage_layer = intersect_layer_with_reference(zl_src, ref_layer, self.zone_value)
+        
+        # Cas 2 : combo (serveur ou projet)
+        elif chosen_data:
+            if isinstance(chosen_data, str) and os.path.exists(chosen_data):
+                # GPKG serveur
+                zl_src = try_load_gpkg_layer(chosen_data)
+                if zl_src:
+                    self.optional_zonage_layer = intersect_layer_with_reference(zl_src, ref_layer, self.zone_value)
             else:
-                zoom_to_layer(layer)
-
-        QtWidgets.QMessageBox.information(self, 'Zone chargée', f"Zone '{val}' chargée et affichée.")
-
-    def _build_page2(self):
-        layout = QtWidgets.QVBoxLayout()
-        lbl = QtWidgets.QLabel('Page suivante : copie des scripts et ouverture de l\'outil Processing choisi.')
-        layout.addWidget(lbl)
-        self.page2.setLayout(layout)
-
-    def on_prev(self):
-        self.stack.setCurrentIndex(0)
-        self.prev_btn.setEnabled(False)
-        self.next_btn.setEnabled(True)
-        self.open_algo_btn.setEnabled(False)
-
-    def on_next(self):
+                # Couche projet
+                lyr = QgsProject.instance().mapLayer(chosen_data)
+                if lyr and isinstance(lyr, QgsVectorLayer):
+                    self.optional_zonage_layer = intersect_layer_with_reference(lyr, ref_layer, self.zone_value)
+        
+        # Appliquer QML si demandé
+        if self.optional_zonage_layer and self.qml_zonage_checkbox.isChecked():
+            try:
+                name = self.optional_zonage_layer.name()
+                base = name.split('_INTER_')[0]
+                apply_qml_to_layer(self.optional_zonage_layer, base)
+            except Exception:
+                pass
+    
+    def _on_launch(self):
         prog = self.prog_combo.currentText()
         if not prog:
             QtWidgets.QMessageBox.warning(self, 'Erreur', 'Choisis un programme.')
             return
+        
         if not (self.zone_layer or self.zone_mem_layer):
-            QtWidgets.QMessageBox.warning(self, 'Erreur', 'Charge d\'abord la zone d\'étude (page précédente).')
+            QtWidgets.QMessageBox.warning(
+                self, 'Erreur', 
+                'Charge d\'abord une zone d\'étude (section 2).'
+            )
             return
-
-        # prepare optional zonage chosen in combo or via browse
-        self.optional_zonage_layer = None
-        chosen_data = self.zonage_combo.currentData()
-        chosen_text = self.zonage_combo.currentText()
-        browse_fp = self.zonage_path_edit.text().strip()
-
-        ref_layer = self.zone_mem_layer or self.zone_layer
-
-        # If user didn't check the show zonage box, ignore zonage inputs as truly optional
-        if not self.show_zonage_checkbox.isChecked():
-            self.optional_zonage_layer = None
-        else:
-            # Case 1: user provided a browse file -> use it
-            if browse_fp:
-                zl_src = QgsVectorLayer(browse_fp, os.path.basename(browse_fp), 'ogr')
-                if not zl_src or not zl_src.isValid():
-                    QtWidgets.QMessageBox.warning(self, 'Erreur', f"Impossible de charger la couche zonage : {browse_fp}")
-                    self.optional_zonage_layer = None
-                else:
-                    # intersect with ref_layer if present
-                    if ref_layer is not None:
-                        ref_geoms = [f.geometry() for f in ref_layer.getFeatures()]
-                        intersects = []
-                        for f in zl_src.getFeatures():
-                            try:
-                                fg = f.geometry()
-                            except Exception:
-                                continue
-                            ok = False
-                            for rg in ref_geoms:
-                                try:
-                                    if rg is not None and not rg.isEmpty() and fg is not None and not fg.isEmpty():
-                                        if rg.intersects(fg):
-                                            ok = True
-                                            break
-                                except Exception:
-                                    continue
-                            if ok:
-                                intersects.append(f)
-                        if intersects:
-                            mem_zon = create_memory_layer_from_features(zl_src, intersects, name_suffix=f"_INTER_{self.zone_value or ''}")
-                            if mem_zon:
-                                self.optional_zonage_layer = mem_zon
-                            else:
-                                QgsProject.instance().addMapLayer(zl_src)
-                                self.optional_zonage_layer = zl_src
-                        else:
-                            QtWidgets.QMessageBox.information(self, 'Info', 'Aucune entité du zonage choisi n\'intersecte la zone d\'étude.')
-                            self.optional_zonage_layer = None
-                    else:
-                        QgsProject.instance().addMapLayer(zl_src)
-                        self.optional_zonage_layer = zl_src
-
-            # Case 2: choose from combo (server gpkg path or project layer id)
-            elif chosen_data:
-                # if chosen_data is a path -> server gpkg
-                if isinstance(chosen_data, str) and os.path.exists(chosen_data):
-                    # try load gpkg layer (first valid layer)
-                    zl_src = try_load_gpkg_layer(chosen_data)
-                    if zl_src is None:
-                        QtWidgets.QMessageBox.information(self, 'Info', f"Aucune couche utilisable trouvée dans {chosen_data}")
-                        self.optional_zonage_layer = None
-                    else:
-                        if ref_layer is not None:
-                            ref_geoms = [f.geometry() for f in ref_layer.getFeatures()]
-                            intersects = []
-                            for f in zl_src.getFeatures():
-                                try:
-                                    fg = f.geometry()
-                                except Exception:
-                                    continue
-                                ok = False
-                                for rg in ref_geoms:
-                                    try:
-                                        if rg is not None and not rg.isEmpty() and fg is not None and not fg.isEmpty():
-                                            if rg.intersects(fg):
-                                                ok = True
-                                                break
-                                    except Exception:
-                                        continue
-                                if ok:
-                                    intersects.append(f)
-                            if intersects:
-                                mem_zon = create_memory_layer_from_features(zl_src, intersects, name_suffix=f"_INTER_{self.zone_value or ''}")
-                                if mem_zon:
-                                    self.optional_zonage_layer = mem_zon
-                                else:
-                                    load_layer_to_project(zl_src, add_if_not=True)
-                                    self.optional_zonage_layer = zl_src
-                            else:
-                                QtWidgets.QMessageBox.information(self, 'Info', 'Aucune entité du zonage serveur n\'intersecte la zone d\'étude.')
-                                self.optional_zonage_layer = None
-                        else:
-                            load_layer_to_project(zl_src, add_if_not=True)
-                            self.optional_zonage_layer = zl_src
-                else:
-                    # chosen_data is likely a project layer id
-                    lyr = QgsProject.instance().mapLayer(chosen_data)
-                    if lyr and isinstance(lyr, QgsVectorLayer):
-                        # intersect with ref_layer
-                        if ref_layer is not None:
-                            ref_geoms = [f.geometry() for f in ref_layer.getFeatures()]
-                            intersects = []
-                            for f in lyr.getFeatures():
-                                try:
-                                    fg = f.geometry()
-                                except Exception:
-                                    continue
-                                ok = False
-                                for rg in ref_geoms:
-                                    try:
-                                        if rg is not None and not rg.isEmpty() and fg is not None and not fg.isEmpty():
-                                            if rg.intersects(fg):
-                                                ok = True
-                                                break
-                                    except Exception:
-                                        continue
-                                if ok:
-                                    intersects.append(f)
-                            if intersects:
-                                mem_zon = create_memory_layer_from_features(lyr, intersects, name_suffix=f"_INTER_{self.zone_value or ''}")
-                                if mem_zon:
-                                    self.optional_zonage_layer = mem_zon
-                                else:
-                                    self.optional_zonage_layer = lyr
-                            else:
-                                QtWidgets.QMessageBox.information(self, 'Info', 'Aucune entité du zonage choisi n\'intersecte la zone d\'étude.')
-                                self.optional_zonage_layer = None
-                        else:
-                            self.optional_zonage_layer = lyr
-                    else:
-                        self.optional_zonage_layer = None
-
-        # apply qml if requested and available (for optional zonage)
-        if self.optional_zonage_layer is not None and self.qml_zonage_checkbox.isChecked():
-            try:
-                name = self.optional_zonage_layer.name()
-                base = name.split('_INTER_')[0]
-                qmlpath = os.path.join(QML_COUCHES_FOLDER, f"QML_{base}.qml")
-                if os.path.exists(qmlpath):
-                    try:
-                        self.optional_zonage_layer.loadNamedStyle(qmlpath)
-                        self.optional_zonage_layer.triggerRepaint()
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-
-        # ensure scripts copied
-        def fb(m):
-            print(m)
-        ensure_scripts_in_user_folder(feedback=fb)
-
-        # move to page2 and enable open button
-        self.stack.setCurrentIndex(1)
-        self.prev_btn.setEnabled(True)
-        self.next_btn.setEnabled(False)
-        self.open_algo_btn.setEnabled(True)
-        self.selected_program = prog
-
-    def on_open_algo(self):
-        """Ferme le dialogue plugin puis ouvre la fenêtre Processing pour l'algo choisi."""
-        if not self.selected_program:
-            QtWidgets.QMessageBox.warning(self, 'Erreur', 'Programme non sélectionné.')
-            return
-        info = ALGO_INFOS.get(self.selected_program)
+        
+        # Préparer zonage optionnel
+        self._prepare_zonage()
+        
+        # Copier scripts
+        ensure_scripts_in_user_folder()
+        
+        # Récupérer l'algo
+        info = ALGO_INFOS.get(prog)
         if not info:
             QtWidgets.QMessageBox.warning(self, 'Erreur', 'Algorithme non configuré.')
             return
+        
         alg_id = info.get('alg_id')
         alg = QgsApplication.processingRegistry().algorithmById(alg_id)
-        if alg is None:
-            QtWidgets.QMessageBox.information(self, 'Algorithme manquant',
-                f"L'algorithme {alg_id} n'est pas trouvé dans le Toolbox.\n"
-                "Nous avons copié les scripts réseau vers ton dossier Processing/scripts utilisateur (si disponible).\n"
-                "Si l'algorithme n'apparaît pas, redémarre QGIS ou va dans Processing > Toolbox > Refresh (icône).\n\n"
-                f"Script source (réseau) : {os.path.join(NETWORK_SCRIPTS_FOLDER, info.get('script_name','-'))}")
+        
+        if not alg:
+            QtWidgets.QMessageBox.information(
+                self, 'Algorithme manquant',
+                f"L'algorithme {alg_id} n'est pas trouvé.\n"
+                "Scripts copiés vers Processing/scripts. Redémarre QGIS ou rafraîchis le Toolbox."
+            )
             return
-
-        # close/accept dialog, ensure event loop processed, then schedule opening of Processing dialog
+        
+        # Fermer et lancer Processing
         try:
-            try:
-                self.accept()
-            except Exception:
-                try:
-                    self.close()
-                except Exception:
-                    pass
-            # process pending events
-            app = QtWidgets.QApplication.instance()
-            if app:
-                app.processEvents()
-
-            def _open_proc():
+            self.accept()
+            QtWidgets.QApplication.instance().processEvents()
+            
+            def _open():
                 try:
                     processing.execAlgorithmDialog(alg_id)
                 except Exception:
-                    try:
-                        processing.execAlgorithmDialog(alg_id)
-                    except Exception:
-                        QtWidgets.QMessageBox.information(None, 'Ouverture manuelle requise',
-                            'Impossible d\'ouvrir automatiquement la fenêtre d\'outil Processing pour cet algorithme.\n'
-                            'Ouvre manuellement Processing Toolbox et cherche : ' + alg_id)
-
-            QtCore.QTimer.singleShot(150, _open_proc)
+                    QtWidgets.QMessageBox.information(
+                        None, 'Ouverture manuelle',
+                        f'Ouvre manuellement le Toolbox et cherche: {alg_id}'
+                    )
+            
+            QtCore.QTimer.singleShot(150, _open)
         except Exception as e:
-            QtWidgets.QMessageBox.critical(self, 'Erreur', f"Erreur lors de l'ouverture de l'outil : {e}\n{traceback.format_exc()}")
+            QtWidgets.QMessageBox.critical(self, 'Erreur', f"Erreur ouverture: {e}\n{traceback.format_exc()}")
 
-# ---------------- Plugin entry-point convenience ----------------
+# ============================================================================
+# CLASSE PLUGIN (ENTRY POINT)
+# ============================================================================
+
 class PrelevOrchestratorPlugin:
     def __init__(self, iface):
         self.iface = iface
         self.action = None
-
+    
     def initGui(self):
-        # Try to load icon.png from plugin folder
         icon_path = os.path.join(PLUGIN_DIR, 'icon.png')
         qicon = None
         if os.path.exists(icon_path):
             try:
                 qicon = QtGui.QIcon(icon_path)
             except Exception:
-                qicon = None
-
-        # Create action. If icon found, create an icon-only action (empty text) with tooltip.
+                pass
+        
         if qicon and not qicon.isNull():
             self.action = QtWidgets.QAction(qicon, '', self.iface.mainWindow())
             self.action.setToolTip('Le VOCAL')
         else:
-            # fallback to text if icon not available
-            self.action = QtWidgets.QAction('Orchestrateur prélèvements', self.iface.mainWindow())
-
+            self.action = QtWidgets.QAction('VOCAL', self.iface.mainWindow())
+        
         self.action.triggered.connect(self.run)
-
-        # Add to menu and toolbar
-        # note: addPluginToMenu still needs a text label; we pass a readable menu name.
-        self.iface.addPluginToMenu('&Prelev Orchestrator', self.action)
+        self.iface.addPluginToMenu('&VOCAL', self.action)
         self.iface.addToolBarIcon(self.action)
-
+    
     def unload(self):
         if self.action:
             try:
-                self.iface.removePluginMenu('&Prelev Orchestrator', self.action)
-            except Exception:
-                pass
-            try:
+                self.iface.removePluginMenu('&VOCAL', self.action)
                 self.iface.removeToolBarIcon(self.action)
             except Exception:
                 pass
-
+    
     def run(self):
         dlg = PrelevOrchestratorDialog(iface.mainWindow())
         dlg.exec_()

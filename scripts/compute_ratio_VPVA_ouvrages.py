@@ -293,7 +293,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
                 defaultValue=True
             )
         )
-        default_qml = r"N:\_MTP\Public\01-ORGANISATION\G-Services\RAGAF\REDEVANCES\Recherche redevables\Etude données prélèvements\06_Valorisation_Visualisation\Outils\QML\QML_ratio_VPVA_ouvrages.qml"
+        default_qml = r"PLACEHOLDER_QML_PATH_WILL_BE_INJECTED_BY_ORCHESTRATOR"
         self.addParameter(
             QgsProcessingParameterString(
                 self.QML_PATH,

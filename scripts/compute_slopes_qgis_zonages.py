@@ -216,7 +216,7 @@ class ZonesSlopesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterBoolean(self.APPLY_QML, self.tr("Appliquer un style QML sur la couche de sortie ?"), defaultValue=True)
         )
         # default QML same as earlier; user can change
-        default_qml = r"N:\_MTP\Public\01-ORGANISATION\G-Services\RAGAF\REDEVANCES\Recherche redevables\Etude données prélèvements\06_Valorisation_Visualisation\Outils\QML\Zonages_Slopes_QML.qml"
+        default_qml = r"PLACEHOLDER_QML_PATH_WILL_BE_INJECTED_BY_ORCHESTRATOR"
         self.addParameter(
             QgsProcessingParameterString(self.QML_PATH, self.tr("Chemin du fichier QML (si appliqué)"), defaultValue=default_qml)
         )
