@@ -175,7 +175,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.ZONE,
-                self.tr("Couche zone d'étude (polygones)"),
+                self.tr("Nom de la couche de la zone d'étude"),
                 [QgsProcessing.TypeVectorPolygon]
             )
         )
@@ -184,14 +184,14 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.PRELEV,
-                self.tr("Couche prélèvements (points ou table)"),
+                self.tr("BASE AGENCE : nom de la couche prélèvements"),
                 [QgsProcessing.TypeVectorAnyGeometry]
             )
         )
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_YEAR_FIELD,
-                self.tr("Champ année (prélèvements)"),
+                self.tr("Champ année"),
                 parentLayerParameterName=self.PRELEV,
                 type=QgsProcessingParameterField.Any
             )
@@ -199,14 +199,14 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_OUV_FIELD,
-                self.tr("Champ ID Ouvrage (prélèvements)"),
+                self.tr("Champ ID Ouvrage (N° Ouvrage)"),
                 parentLayerParameterName=self.PRELEV
             )
         )
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_ASSIETTE_FIELD,
-                self.tr("Champ Assiette (volume prélevé)"),
+                self.tr("Champ Assiette"),
                 parentLayerParameterName=self.PRELEV
             )
         )
@@ -214,7 +214,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_MILIEU_FIELD,
-                self.tr("Champ 'type de milieu' (prélèvements) - optionnel"),
+                self.tr("Champ 'type de milieu' (optionnel)"),
                 parentLayerParameterName=self.PRELEV,
                 optional=True
             )
@@ -224,7 +224,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_OUV_NAME,
-                self.tr("Champ nom de l'ouvrage (optionnel, conservé dans la sortie)"),
+                self.tr("Champ nom de l'ouvrage - Libellé Ouvrage (optionnel)"),
                 parentLayerParameterName=self.PRELEV,
                 optional=True
             )
@@ -232,7 +232,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterField(
                 self.PRELEV_INTERLOC,
-                self.tr("Champ interlocuteur (optionnel, conservé dans la sortie)"),
+                self.tr("Champ interlocuteur - Contribuable (optionnel)"),
                 parentLayerParameterName=self.PRELEV,
                 optional=True
             )
@@ -242,28 +242,28 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.AUTOR,
-                self.tr("Table / couche volumes autorisés"),
+                self.tr("BASE DDTM : Nom de la couche contenant les volumes autorisés"),
                 [QgsProcessing.TypeVectorAnyGeometry]
             )
         )
         self.addParameter(
             QgsProcessingParameterField(
                 self.AUTOR_OUV_FIELD,
-                self.tr("Champ ID Ouvrage (autorises) - pour la jointure"),
+                self.tr("Champ ID Ouvrage de l'AGENCE -> POUR LA JOINTURE"),
                 parentLayerParameterName=self.AUTOR
             )
         )
         self.addParameter(
             QgsProcessingParameterField(
                 self.AUTOR_VOL_FIELD,
-                self.tr("Champ Volume autorisé (autorises)"),
+                self.tr("Champ Volume autorisé"),
                 parentLayerParameterName=self.AUTOR
             )
         )
         self.addParameter(
             QgsProcessingParameterField(
                 self.AUTOR_DDTM_FIELD,
-                self.tr("Champ Identifiant DDTM (autorises) - optionnel"),
+                self.tr("Champ Identifiant DDTM (optionnel)"),
                 parentLayerParameterName=self.AUTOR,
                 optional=True
             )
@@ -274,9 +274,9 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.YEAR,
-                self.tr("Année (ex: 2023). Mettre 0 pour utiliser la dernière année disponible"),
+                self.tr("Année de comparaison (ex: 2023)"),
                 type=QgsProcessingParameterNumber.Integer,
-                defaultValue=0
+                defaultValue=2023
             )
         )
         self.addParameter(
@@ -305,7 +305,7 @@ class ComparePrelevementsAutorises(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFeatureSink(
                 self.OUTPUT,
-                self.tr("Couche de sortie (comparaison prélèvements vs autorisés)")
+                self.tr("Couche de sortie")
             )
         )
 

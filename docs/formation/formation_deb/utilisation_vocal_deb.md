@@ -57,7 +57,7 @@ Deux listes déroulantes sont disponibles :
 - Échelle : *Départements*  
 - Élément : *GARD*
 
-Une fois ces choix effectués, cliquer sur **Charger zone et zoom**.
+Une fois ces choix effectués, cliquer sur **Charger la zone et zoomer**.
 
 ![Chargement de la zone d’étude dans VOCAL]({{ "/assets/images/formation/screen_utilisation_choix_zone.png" | relative_url }})
 
@@ -206,8 +206,7 @@ Même démarche que pour charger le premier programme,on va cependant rajouter u
 1. Lancer VOCAL.
 2. Sélectionner le programme **Ratio Volumes prélevés / Volumes autorisés par ouvrage**.
 3. Charger une zone d’étude.
-4. Cliquer sur **Suivant**.
-5. Cliquer sur **Ouvrir l’outil processing**.
+4. Cliquer sur **Valider**.
 
 Le programme se lance. 
 Compléter les champs étape par étape :

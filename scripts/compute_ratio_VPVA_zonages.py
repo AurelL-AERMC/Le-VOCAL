@@ -143,36 +143,36 @@ class ZonesComparePrelevAutorise(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         # zones
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.ZONES, self.tr("Couche de zonage (polygones)"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.ZONES, self.tr("Nom de la couche du SOUS-ZONAGE"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
-            QgsProcessingParameterField(self.ZONE_LABEL, self.tr("Champ libellé du zonage (sera conservé)"), parentLayerParameterName=self.ZONES)
+            QgsProcessingParameterField(self.ZONE_LABEL, self.tr("Champ du libellé du sous-zonage (ex:libellé_ssbv)"), parentLayerParameterName=self.ZONES)
         )
         # prélèvements
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.PRELEV, self.tr("Couche prélèvements (points/table)"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.PRELEV, self.tr("BASE AGENCE : nom de la couche prélèvements"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
-            QgsProcessingParameterField(self.PRELEV_YEAR, self.tr("Champ année (prélèvements)"), parentLayerParameterName=self.PRELEV, type=QgsProcessingParameterField.Any)
+            QgsProcessingParameterField(self.PRELEV_YEAR, self.tr("Champ année"), parentLayerParameterName=self.PRELEV, type=QgsProcessingParameterField.Any)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.PRELEV_OUV, self.tr("Champ ID Ouvrage (prélèvements)"), parentLayerParameterName=self.PRELEV)
+            QgsProcessingParameterField(self.PRELEV_OUV, self.tr("Champ ID Ouvrage (N° Ouvrage)"), parentLayerParameterName=self.PRELEV)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.PRELEV_ASSIETTE, self.tr("Champ Assiette (volume prélevé)"), parentLayerParameterName=self.PRELEV)
+            QgsProcessingParameterField(self.PRELEV_ASSIETTE, self.tr("Champ Assiette"), parentLayerParameterName=self.PRELEV)
         )
         # volumes autorisés
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.AUTOR, self.tr("Table / couche volumes autorisés"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.AUTOR, self.tr("BASE DDTM : Nom de la couche contenant les volumes autorisés"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
-            QgsProcessingParameterField(self.AUTOR_OUV, self.tr("Champ ID Ouvrage (autorises) - pour la jointure"), parentLayerParameterName=self.AUTOR)
+            QgsProcessingParameterField(self.AUTOR_OUV, self.tr("Champ ID Ouvrage de l'AGENCE -> POUR LA JOINTURE"), parentLayerParameterName=self.AUTOR)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.AUTOR_VOL, self.tr("Champ Volume autorisé (autorises)"), parentLayerParameterName=self.AUTOR)
+            QgsProcessingParameterField(self.AUTOR_VOL, self.tr("Champ Volume autorisé"), parentLayerParameterName=self.AUTOR)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.AUTOR_DDTM, self.tr("Champ Identifiant DDTM (autorises) - optionnel"), parentLayerParameterName=self.AUTOR, optional=True)
+            QgsProcessingParameterField(self.AUTOR_DDTM, self.tr("Champ Identifiant DDTM (optionnel)"), parentLayerParameterName=self.AUTOR, optional=True)
         )
         # autres
         self.addParameter(

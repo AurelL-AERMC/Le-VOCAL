@@ -179,7 +179,7 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         return 'compute_slopes_ouvrage_only'
 
     def displayName(self):
-        return self.tr('Pentes par ouvrage (nettoyé, sans BV)')
+        return self.tr('Evolution temporelle par ouvrage')
 
     def group(self):
         return self.tr('Analyses temporelles')
@@ -198,43 +198,43 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.ZONE,
-                self.tr("Couche zone d'étude (polygones) - toutes les entités seront prises en compte"),
+                self.tr("Nom de la couche de la zone d'étude"),
                 [QgsProcessing.TypeVectorPolygon]
             )
         )
 
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.INPUT, self.tr("Couche d'entrée (points/table)"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.INPUT, self.tr("BASE AGENCE : nom de la couche prélèvements"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
             QgsProcessingParameterField(self.YEAR, self.tr("Champ année"), parentLayerParameterName=self.INPUT, type=QgsProcessingParameterField.Numeric)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.OUVRAGE, self.tr("Champ identifiant ouvrage"), parentLayerParameterName=self.INPUT)
+            QgsProcessingParameterField(self.OUVRAGE, self.tr("Champ ID Ouvrage (N° Ouvrage)"), parentLayerParameterName=self.INPUT)
         )
 
         # nouveaux paramètres pour le nom de l'ouvrage et l'interlocuteur (tous deux optionnels)
         self.addParameter(
             QgsProcessingParameterField(self.OUV_NAME,
-                                       self.tr("Champ nom de l'ouvrage (sera conservé dans la sortie, optionnel)"),
+                                       self.tr("Champ nom de l'ouvrage - Libellé Ouvrage (optionnel)"),
                                        parentLayerParameterName=self.INPUT,
                                        optional=True)
         )
         self.addParameter(
             QgsProcessingParameterField(self.INTERLOC,
-                                       self.tr("Champ nom de l'interlocuteur (optionnel)"),
+                                       self.tr("Champ nom de l'interlocuteur - Contribuable (optionnel)"),
                                        parentLayerParameterName=self.INPUT,
                                        optional=True)
         )
 
         self.addParameter(
-            QgsProcessingParameterField(self.VOL, self.tr("Champ volume (Assiette)"), parentLayerParameterName=self.INPUT)
+            QgsProcessingParameterField(self.VOL, self.tr("Champ Assiette"), parentLayerParameterName=self.INPUT)
         )
         self.addParameter(
             QgsProcessingParameterEnum(self.METHOD, self.tr("Méthode pour estimer la pente"), options=['OLS', 'Theil-Sen'])
         )
         self.addParameter(
-            QgsProcessingParameterNumber(self.MIN_YEARS, self.tr("Années minimales pour calculer une pente"), type=QgsProcessingParameterNumber.Integer, defaultValue=4)
+            QgsProcessingParameterNumber(self.MIN_YEARS, self.tr("Nombre d'années minimales disponibles pour calculer une évolution"), type=QgsProcessingParameterNumber.Integer, defaultValue=4)
         )
         self.addParameter(
             QgsProcessingParameterNumber(self.START_YEAR, self.tr("Année de début"), type=QgsProcessingParameterNumber.Integer, defaultValue=2012)
@@ -252,7 +252,7 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
             QgsProcessingParameterString(self.QML_PATH, self.tr("Chemin du fichier QML (si appliqué)"), defaultValue=default_qml)
         )
         self.addParameter(
-            QgsProcessingParameterFeatureSink(self.OUTPUT, self.tr("Couche de sortie (pentes par ouvrage)"))
+            QgsProcessingParameterFeatureSink(self.OUTPUT, self.tr("Couche de sortie"))
         )
 
     def processAlgorithm(self, parameters, context, feedback):

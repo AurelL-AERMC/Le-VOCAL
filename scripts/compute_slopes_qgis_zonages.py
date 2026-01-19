@@ -165,7 +165,7 @@ class ZonesSlopesAlgorithm(QgsProcessingAlgorithm):
         return 'compute_slopes_zones'
 
     def displayName(self):
-        return self.tr('Pentes par zonage (agg. points → zones)')
+        return self.tr('Pentes par zonage')
 
     def group(self):
         return self.tr('Analyses temporelles')
@@ -183,28 +183,28 @@ class ZonesSlopesAlgorithm(QgsProcessingAlgorithm):
 
     def initAlgorithm(self, config=None):
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.ZONES, self.tr("Couche de zonage (polygones)"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.ZONES, self.tr("Nom de la couche du SOUS-ZONAGE"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
-            QgsProcessingParameterField(self.ZONE_ID, self.tr("Champ identifiant de la zone"), parentLayerParameterName=self.ZONES)
+            QgsProcessingParameterField(self.ZONE_ID, self.tr("Champ du libellé du sous-zonage (ex:libellé_ssbv)"), parentLayerParameterName=self.ZONES)
         )
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.OUVRAGES, self.tr("Couche ouvrages (points / table)"), [QgsProcessing.TypeVectorAnyGeometry])
+            QgsProcessingParameterVectorLayer(self.OUVRAGES, self.tr("BASE AGENCE : nom de la couche prélèvements"), [QgsProcessing.TypeVectorAnyGeometry])
         )
         self.addParameter(
-            QgsProcessingParameterField(self.YEAR, self.tr("Champ année (ouvrages)"), parentLayerParameterName=self.OUVRAGES, type=QgsProcessingParameterField.Numeric)
+            QgsProcessingParameterField(self.YEAR, self.tr("Champ année"), parentLayerParameterName=self.OUVRAGES, type=QgsProcessingParameterField.Numeric)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.OUV_ID, self.tr("Champ identifiant ouvrage (N°Ouvrage)"), parentLayerParameterName=self.OUVRAGES)
+            QgsProcessingParameterField(self.OUV_ID, self.tr("Champ ID Ouvrage (N° Ouvrage)"), parentLayerParameterName=self.OUVRAGES)
         )
         self.addParameter(
-            QgsProcessingParameterField(self.VOL, self.tr("Champ volume (Assiette)"), parentLayerParameterName=self.OUVRAGES)
+            QgsProcessingParameterField(self.VOL, self.tr("Champ Assiette"), parentLayerParameterName=self.OUVRAGES)
         )
         self.addParameter(
             QgsProcessingParameterEnum(self.METHOD, self.tr("Méthode pour estimer la pente"), options=['OLS', 'Theil-Sen'])
         )
         self.addParameter(
-            QgsProcessingParameterNumber(self.MIN_YEARS, self.tr("Années minimales pour calculer une pente"), type=QgsProcessingParameterNumber.Integer, defaultValue=4)
+            QgsProcessingParameterNumber(self.MIN_YEARS, self.tr("Nombre d'années minimales disponibles pour calculer une évolution"), type=QgsProcessingParameterNumber.Integer, defaultValue=4)
         )
         self.addParameter(
             QgsProcessingParameterNumber(self.START_YEAR, self.tr("Année de début"), type=QgsProcessingParameterNumber.Integer, defaultValue=2012)
@@ -221,7 +221,7 @@ class ZonesSlopesAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterString(self.QML_PATH, self.tr("Chemin du fichier QML (si appliqué)"), defaultValue=default_qml)
         )
         self.addParameter(
-            QgsProcessingParameterFeatureSink(self.OUTPUT, self.tr("Couche de sortie (pentes par zone)"))
+            QgsProcessingParameterFeatureSink(self.OUTPUT, self.tr("Couche de sortie"))
         )
         # optional: table zone x year for diagnostics
         self.addParameter(
