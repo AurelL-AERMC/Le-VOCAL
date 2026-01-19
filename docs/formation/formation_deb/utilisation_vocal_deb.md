@@ -85,7 +85,7 @@ Une fois la case cochée, un menu supplémentaire apparaît :
   - une couche polygone déjà présente dans le projet QGIS,
   - ou un fichier externe via l’explorateur de fichiers.
 
-Une fois le sous-zonage choisi, cliquer sur **Suivant** (en bas à droite du menu).
+Une fois le sous-zonage choisi, cliquer sur **Valider** (en bas à droite du menu).
 
 ---
 
@@ -96,7 +96,7 @@ Si l’on souhaite charger le **département de l’Hérault** comme zone d’é
 
 *Figure X — Exemple de chargement de zone dans VOCAL*
 
-Puis cliquer sur **Suivant**.
+Puis cliquer sur **Valider**.
 
 ---
 
@@ -108,13 +108,7 @@ Une fois les zones choisies :
 1. Lancer VOCAL.
 2. Sélectionner le programme **Évolution des volumes prélevés par ouvrage**.
 3. Charger une zone d’étude.
-4. Cliquer sur **Suivant**.
-
-Une seconde page s’ouvre : cliquer sur **Ouvrir l’outil processing**.
-
-![Lancement des programmes VOCAL]({{ "/assets/images/formation/screen_utilisation_outil_processing.png" | relative_url }})
-
-*Figure X — Lancement des programmes VOCAL*
+4. Cliquer sur **Valider**.
 
 Le programme se lance alors.  
 Si ce n’est pas le cas, revenir à l’étape **1. Installation de VOCAL** afin de vérifier que l’installation est complète.

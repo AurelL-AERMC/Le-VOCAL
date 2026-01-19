@@ -390,7 +390,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         main_layout = QtWidgets.QVBoxLayout()
         
         # ========== SECTION 1 : PROGRAMME ==========
-        grp_prog = QtWidgets.QGroupBox('1️⃣ Choix du programme')
+        grp_prog = QtWidgets.QGroupBox('1 Choix du programme')
         v_prog = QtWidgets.QVBoxLayout()
         self.prog_combo = QtWidgets.QComboBox()
         for k in ALGO_INFOS.keys():
@@ -399,7 +399,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         grp_prog.setLayout(v_prog)
         
         # ========== SECTION 2 : ZONE D'ÉTUDE (COLLAPSIBLE) ==========
-        self.grp_zone = QtWidgets.QGroupBox("2️⃣ Zone d'étude")
+        self.grp_zone = QtWidgets.QGroupBox("2️ Zone d'étude")
         self.grp_zone.setCheckable(True)
         self.grp_zone.setChecked(False)  # Replié par défaut si zone en mémoire
         
@@ -420,7 +420,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         self.zone_value_combo = QtWidgets.QComboBox()
         zone_layout.addWidget(self.zone_value_combo, 2, 1)
         
-        self.load_zone_btn = QtWidgets.QPushButton('📍 Charger zone et zoom')
+        self.load_zone_btn = QtWidgets.QPushButton('📍 Charger la zone et zoomer')
         self.load_zone_btn.clicked.connect(self._on_load_zone)
         zone_layout.addWidget(self.load_zone_btn, 3, 0, 1, 2)
         
@@ -431,7 +431,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         self.grp_zone.setLayout(zone_layout)
         
         # ========== SECTION 3 : ZONAGE OPTIONNEL ==========
-        self.show_zonage_checkbox = QtWidgets.QCheckBox("3️⃣ Charger un sous-zonage (optionnel)")
+        self.show_zonage_checkbox = QtWidgets.QCheckBox("3️ Charger un sous-zonage (optionnel)")
         self.show_zonage_checkbox.setChecked(False)
         
         self.grp_zonage = QtWidgets.QGroupBox('Configuration du sous-zonage')
@@ -456,10 +456,10 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         self.show_zonage_checkbox.toggled.connect(lambda c: self.grp_zonage.setVisible(c))
         
         # ========== SECTION 4 : OPTIONS QML ==========
-        grp_qml = QtWidgets.QGroupBox('4️⃣ Styles visuels (QML)')
+        grp_qml = QtWidgets.QGroupBox('4 Styles visuels (QML)')
         qml_layout = QtWidgets.QVBoxLayout()
-        self.qml_zone_checkbox = QtWidgets.QCheckBox("Appliquer QML à la zone d'étude")
-        self.qml_zonage_checkbox = QtWidgets.QCheckBox("Appliquer QML au sous-zonage")
+        self.qml_zone_checkbox = QtWidgets.QCheckBox("Appliquer QML à la zone d'étude (recommmandé)")
+        self.qml_zonage_checkbox = QtWidgets.QCheckBox("Appliquer QML au sous-zonage (recommmandé)")
         self.qml_zone_checkbox.setChecked(True)
         self.qml_zonage_checkbox.setChecked(True)
         qml_layout.addWidget(self.qml_zone_checkbox)
@@ -481,7 +481,7 @@ class PrelevOrchestratorDialog(QtWidgets.QDialog):
         self.clear_zone_btn = QtWidgets.QPushButton('🗑️ Effacer zone')
         self.clear_zone_btn.clicked.connect(self._clear_zone)
         
-        self.launch_btn = QtWidgets.QPushButton('🚀 Lancer l\'outil Processing')
+        self.launch_btn = QtWidgets.QPushButton('🚀 Valider')
         self.launch_btn.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 10px;")
         self.launch_btn.clicked.connect(self._on_launch)
         
