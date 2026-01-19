@@ -216,13 +216,13 @@ class ComputeSlopesByOuvrage(QgsProcessingAlgorithm):
         # nouveaux paramètres pour le nom de l'ouvrage et l'interlocuteur (tous deux optionnels)
         self.addParameter(
             QgsProcessingParameterField(self.OUV_NAME,
-                                       self.tr("Champ nom de l'ouvrage - Libellé Ouvrage (optionnel)"),
+                                       self.tr("Champ nom de l'ouvrage - Libellé Ouvrage"),
                                        parentLayerParameterName=self.INPUT,
                                        optional=True)
         )
         self.addParameter(
             QgsProcessingParameterField(self.INTERLOC,
-                                       self.tr("Champ nom de l'interlocuteur - Contribuable (optionnel)"),
+                                       self.tr("Champ nom de l'interlocuteur - Contribuable"),
                                        parentLayerParameterName=self.INPUT,
                                        optional=True)
         )
