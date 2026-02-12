@@ -30,7 +30,7 @@ NETWORK_SCRIPTS_FOLDER = os.path.join(PLUGIN_DIR, 'scripts')
 QML_COUCHES_FOLDER = os.path.join(PLUGIN_DIR, 'QML')  # Modifié : utilise maintenant ~/QML au lieu de ~/Couches/QML_Couches
 
 GPKG_MAP = {
-    'Délégation': 'limite_Deleg.gpkg',
+    'Délégation': 'deleg_MTP.gpkg',
     'Départements': 'departements.gpkg',
     'Bassins versants': 'BV.gpkg',
     'Communes': 'communes.gpkg',
