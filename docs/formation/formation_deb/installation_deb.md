@@ -1,7 +1,7 @@
 ---
 layout: default
 title: "Installer VOCAL"
-parent: "Formation : je n'ai jamais lancé QGIS"
+parent: "Formation : Comment utiliser VOCAL"
 nav_order: 1
 ---
 

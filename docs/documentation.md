@@ -185,7 +185,7 @@ La documentation utilisateur de VOCAL insiste sur la vérification du type du ch
 
 Chaque programme de VOCAL est associé à un fichier de style QML qui définit la représentation cartographique de la couche de sortie (symbologie graduée sur la pente, les ratios, etc.). L'application du QML est optionnelle et contrôlée par un paramètre booléen `APPLY_QML`.
 
-L'application du style est réalisée en fin de traitement, après récupération de la couche de sortie via `QgsProcessingUtils.mapLayerFromString()`. Cette récupération est nécessaire car la couche de sortie d'un algorithme Processing n'est pas directement accessible comme objet Python pendant l'exécution — elle est d'abord enregistrée dans le contexte Processing, puis accessible via son identifiant `dest_id`.
+L'application du style est réalisée en fin de traitement, après récupération de la couche de sortie via `QgsProcessingUtils.mapLayerFromString()`. Cette récupération est nécessaire car la couche de sortie d'un algorithme Processing n'est pas directement accessible comme objet Python pendant l'exécution, elle est d'abord enregistrée dans le contexte Processing, puis accessible via son identifiant `dest_id`.
 
 La méthode `loadNamedStyle()` peut retourner soit un booléen, soit un tuple `(bool, message)` selon la version de QGIS. Le code gère les deux cas via un bloc `try/except` sur `TypeError` pour assurer la compatibilité entre les versions 3.x de QGIS.
 
@@ -197,13 +197,13 @@ Plusieurs axes d'amélioration ont été identifiés lors du développement et d
 
 - **Centralisation des fonctions utilitaires** : la duplication de `parse_number()` et d'autres helpers dans chaque script Processing est une dette technique. Une solution propre serait de distribuer un module `vocal_utils.py` dans le dossier des scripts Processing lors de l'installation.
 - **Gestion des canaux** : les canaux d'irrigation font l'objet d'une comptabilisation différente entre les DDTM (débit ou volume non restitué) et l'Agence (volume total prélevé). Ce point mériterait un traitement spécifique dans le programme de ratio VP/VA.
-- **Programme d'état de connaissance** : le cinquième programme (état de connaissance des ouvrages Agence) est à usage interne Agence. Son architecture suit le même pattern que les autres programmes mais ne produit pas d'indicateurs de prélèvement — il s'agit d'un diagnostic de qualité des données.
+- **Programme d'état de connaissance** : le cinquième programme (état de connaissance des ouvrages Agence) est à usage interne Agence. Son architecture suit le même pattern que les autres programmes mais ne produit pas d'indicateurs de prélèvement, il s'agit d'un diagnostic de qualité des données.
 - **Export des résultats** : la documentation utilisateur décrit l'export vers Excel via le menu QGIS, mais une fonctionnalité d'export intégrée au plugin faciliterait la production de bilans standardisés.
 
 ---
 
 ## Conclusion
 
-VOCAL est conçu comme un outil opérationnel destiné à des agents sans expertise poussée en SIG ou en programmation. Les choix architecturaux — séparation orchestrateur/scripts, versions allégées des dépendances, mémorisation de la zone d'étude, injection dynamique des chemins — visent tous à réduire les frictions à l'usage et à garantir une utilisation stable dans un contexte institutionnel où les configurations de QGIS sont très diverses.
+VOCAL est conçu comme un outil opérationnel destiné à des agents sans expertise poussée en SIG ou en programmation. Les choix architecturaux, la séparation orchestrateur/scripts, versions allégées des dépendances, mémorisation de la zone d'étude ou encore l'injection dynamique des chemins etc. visent tous à réduire les frictions à l'usage et à garantir une utilisation stable dans un contexte institutionnel où les configurations de QGIS sont très diverses.
 
-La transparence des indicateurs produits est un principe directeur : chaque métrique est documentée dans le code source et dans la formation utilisateur, avec ses limites et ses cas d'usage recommandés. Les résultats de VOCAL sont des portes d'entrée pour l'analyse, pas des conclusions — l'interprétation reste le travail de l'analyste.
+La transparence des indicateurs produits est un principe directeur : chaque métrique est documentée dans le code source et dans la formation utilisateur, avec ses limites et ses cas d'usage recommandés. Les résultats de VOCAL sont des portes d'entrée pour l'analyse, pas des conclusions, l'interprétation reste le travail de l'analyste.
