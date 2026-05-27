@@ -5,13 +5,13 @@ parent: Accueil
 nav_order: 2
 ---
 
-# Documentation technique — Plugin QGIS VOCAL
+# Documentation technique 
 
 **Valorisateur des Ouvrages Connus À L'Agence — Orchestrateur de programmes périphériques de valorisation automatique et d'analyse des prélèvements d'eau en milieu naturel**
 
 *Choix méthodologiques et architecture technique*
 
-*Aurel Lashermes — Agence de l'eau Rhône-Méditerranée-Corse — 2026*
+*Aurel Lashermes - Agence de l'eau Rhône-Méditerranée-Corse - 2026*
 
 ---
 
